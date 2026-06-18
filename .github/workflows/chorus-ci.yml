@@ -1,0 +1,35 @@
+name: chorus CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "chorus/**"
+      - ".github/workflows/chorus-ci.yml"
+  pull_request:
+    paths:
+      - "chorus/**"
+      - ".github/workflows/chorus-ci.yml"
+
+defaults:
+  run:
+    working-directory: chorus
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # The app builds in demo mode (in-memory seed) with no secrets, so CI needs
+    # no Supabase env. See chorus/.env.example.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: chorus/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm build
