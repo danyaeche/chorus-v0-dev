@@ -22,68 +22,25 @@ state machine, sign-offs, DFM approval), the repo layout, and deployment notes.
 
 ---
 
-## Also in this repo: multi-model chat UI exploration (root)
+## Also in this repo: multi-model chat UI exploration ([`chat-ui/`](./chat-ui))
 
 > **Heads-up — two parallel "Chorus" explorations live here.** The DFM workspace
-> above (in [`chorus/`](./chorus)) is one. The Vite/React app at the repo root
-> (below) is a separate v0 exploration of a *multi-model chat* idea, added by the
-> `refine-chorus-ui-flow` PR. They share the repo and the name but are otherwise
-> independent; which direction to keep is a product decision for review.
+> above (in [`chorus/`](./chorus)) is one. The Vite/React app in
+> [`chat-ui/`](./chat-ui) is a separate v0 exploration of a *multi-model chat*
+> idea, added by the `refine-chorus-ui-flow` PR. They share the repo and the name
+> but are otherwise independent; which direction to keep is a product decision for
+> review.
 
 **Concept:** _ask once, hear every voice._ A single prompt is sent to several AI
-models at the same time and their answers stream in side by side so you can
-compare them, synthesize a best-of answer, and keep the conversation going.
-
-### Stack
-
-- [Vite](https://vitejs.dev/) + [React 18](https://react.dev/) + TypeScript
-- [Tailwind CSS](https://tailwindcss.com/) for styling
-- No backend required — answers come from a **mock provider** that simulates
-  per-voice streaming.
-
-### Getting started
+models at the same time; their answers stream in side by side so you can compare
+them, synthesize a best-of answer, and keep the conversation going (threaded).
 
 ```bash
+cd chat-ui
 npm install
 npm run dev      # http://localhost:5173
 ```
 
-Other scripts: `npm run build` (typecheck + production build),
-`npm run preview`, `npm run lint` (typecheck only).
-
-### The UI flow
-
-1. **Pick your voices** — choose which models join the chorus.
-2. **Ask once** — the prompt fans out to every selected voice simultaneously.
-3. **Compare** — each voice streams into its own column; copy or regenerate any
-   single answer.
-4. **Synthesize** — the **Conductor** distills every voice's answer into one
-   merged best-of response.
-5. **Follow up** — the conversation **threads**: each voice carries its own
-   history into the next turn.
-
-### Layout
-
-```
-src/
-  types.ts          # domain types + the ChorusProvider contract
-  voices.ts         # the roster of voices + the Conductor (synthesis)
-  mockProvider.ts   # simulated streaming provider (swap for a real backend)
-  useChorus.ts      # state, threading + fan-out + synthesis orchestration
-  App.tsx           # layout: header, conversation, composer dock
-  components/        # VoicePicker, Composer, TurnView, AnswerCard,
-                     # SynthesisCard, VoiceAvatar
-```
-
-### Wiring a real backend
-
-Replace `mockProvider` with any object implementing the `ChorusProvider`
-interface in `src/types.ts`:
-
-- `ask(voice, messages, onChunk, signal)` — `messages` is the voice's threaded
-  history (oldest first, ending with the current user prompt), which maps
-  directly onto a chat-completions request.
-- `synthesize({ prompt, answers }, onChunk, signal)` — the Conductor step;
-  `answers` is every voice's text for the turn.
-
-The UI and orchestration are provider-agnostic, so nothing else needs to change.
+See [`chat-ui/README.md`](./chat-ui/README.md) for the full flow, the threading
+model, the project layout, and how to wire a real backend via the
+`ChorusProvider` contract.

@@ -1,9 +1,9 @@
 {
-  "name": "chorus-v0-dev",
+  "name": "chorus-chat-ui",
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "v0 of Chorus AI — ask once, hear every voice.",
+  "description": "Chorus chat UI — ask once, hear every voice.",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
