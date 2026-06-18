@@ -4,13 +4,15 @@ import type {
   ChatMessage,
   ChorusProvider,
   ChorusTurn,
+  Synthesis,
+  Voice,
 } from "./types";
-import { CONDUCTOR, VOICES_BY_ID } from "./voices";
+import { VOICES_BY_ID } from "./voices";
 
 let turnCounter = 0;
 function nextTurnId(): string {
   turnCounter += 1;
-  return `turn_${turnCounter}_${turnCounter * 2654435761}`;
+  return `turn_${turnCounter}`;
 }
 
 /**
@@ -18,8 +20,10 @@ function nextTurnId(): string {
  * actually answered) becomes a user/assistant pair, ending with the new
  * prompt. A voice only "remembers" turns it was present for, so newly added
  * voices start fresh from the moment they join.
+ *
+ * Exported for unit testing — this is the core threading rule.
  */
-function buildVoiceMessages(
+export function buildVoiceMessages(
   priorTurns: ChorusTurn[],
   voiceId: string,
   prompt: string
@@ -37,13 +41,31 @@ function buildVoiceMessages(
   return messages;
 }
 
+/**
+ * Map a thrown streaming error to a status patch: a user-initiated abort ends
+ * the answer cleanly as "done"; anything else surfaces as an error. Exported so
+ * the mapping can be unit-tested without standing up the hook.
+ */
+export function classifyStreamError(
+  err: unknown,
+  fallback = "Something went wrong."
+): { status: "done" } | { status: "error"; error: string } {
+  if ((err as { name?: string } | null)?.name === "AbortError") {
+    return { status: "done" };
+  }
+  return {
+    status: "error",
+    error: (err as { message?: string } | null)?.message ?? fallback,
+  };
+}
+
 interface UseChorusResult {
   turns: ChorusTurn[];
   /** True while any voice or synthesis is still in flight. */
   isBusy: boolean;
   /** Fan a prompt out to the given voices, threading in prior context. */
   ask: (prompt: string, voiceIds: string[]) => void;
-  /** Cancel any in-flight work. */
+  /** Cancel all in-flight work across every turn. */
   stop: () => void;
   /** Re-run a single voice's answer within an existing turn. */
   regenerate: (turnId: string, voiceId: string) => void;
@@ -60,7 +82,24 @@ interface UseChorusResult {
 export function useChorus(provider: ChorusProvider): UseChorusResult {
   const [turns, setTurns] = useState<ChorusTurn[]>([]);
   const [activeCount, setActiveCount] = useState(0);
-  const controllerRef = useRef<AbortController | null>(null);
+
+  // One AbortController per turn, so asking a follow-up does NOT cancel work
+  // still in flight on earlier turns (e.g. an earlier turn's synthesis). Stop
+  // and New-chorus abort every controller; a single turn can be retried after
+  // an abort because controllerFor() replaces a spent controller.
+  const controllersRef = useRef<Map<string, AbortController>>(new Map());
+  const controllerFor = useCallback((turnId: string) => {
+    const map = controllersRef.current;
+    let c = map.get(turnId);
+    if (!c || c.signal.aborted) {
+      c = new AbortController();
+      map.set(turnId, c);
+    }
+    return c;
+  }, []);
+  const abortAll = useCallback(() => {
+    for (const c of controllersRef.current.values()) c.abort();
+  }, []);
 
   // Mirror the latest turns into a ref so regenerate/synthesize can read the
   // committed conversation without re-creating their callbacks every render.
@@ -69,27 +108,16 @@ export function useChorus(provider: ChorusProvider): UseChorusResult {
     turnsRef.current = turns;
   }, [turns]);
 
-  /** Reuse the live abort controller, or make a fresh one if none/aborted. */
-  const ensureController = useCallback(() => {
-    let c = controllerRef.current;
-    if (!c || c.signal.aborted) {
-      c = new AbortController();
-      controllerRef.current = c;
-    }
-    return c;
-  }, []);
-
   const patchAnswer = useCallback(
     (turnId: string, voiceId: string, patch: Partial<Answer>) => {
       setTurns((prev) =>
         prev.map((turn) => {
           if (turn.id !== turnId) return turn;
+          const current = turn.answers[voiceId];
+          if (!current) return turn;
           return {
             ...turn,
-            answers: {
-              ...turn.answers,
-              [voiceId]: { ...turn.answers[voiceId], ...patch },
-            },
+            answers: { ...turn.answers, [voiceId]: { ...current, ...patch } },
           };
         })
       );
@@ -120,6 +148,7 @@ export function useChorus(provider: ChorusProvider): UseChorusResult {
               prev.map((turn) => {
                 if (turn.id !== turnId) return turn;
                 const current = turn.answers[voiceId];
+                if (!current) return turn;
                 return {
                   ...turn,
                   answers: {
@@ -141,14 +170,7 @@ export function useChorus(provider: ChorusProvider): UseChorusResult {
           latencyMs: Math.round(performance.now() - startedAt),
         });
       } catch (err) {
-        if ((err as Error)?.name === "AbortError") {
-          patchAnswer(turnId, voiceId, { status: "done" });
-        } else {
-          patchAnswer(turnId, voiceId, {
-            status: "error",
-            error: (err as Error)?.message ?? "Something went wrong.",
-          });
-        }
+        patchAnswer(turnId, voiceId, classifyStreamError(err));
       } finally {
         setActiveCount((c) => Math.max(0, c - 1));
       }
@@ -161,13 +183,12 @@ export function useChorus(provider: ChorusProvider): UseChorusResult {
       const text = prompt.trim();
       if (!text || voiceIds.length === 0) return;
 
-      // Starting a new turn cancels any still-streaming previous work.
-      controllerRef.current?.abort();
-      const controller = new AbortController();
-      controllerRef.current = controller;
-
       const priorTurns = turnsRef.current;
       const turnId = nextTurnId();
+      // Fresh turn id → controllerFor mints a new controller; earlier turns are
+      // left running.
+      const controller = controllerFor(turnId);
+
       const answers: Record<string, Answer> = {};
       for (const id of voiceIds) {
         answers[id] = { voiceId: id, status: "idle", text: "" };
@@ -187,7 +208,7 @@ export function useChorus(provider: ChorusProvider): UseChorusResult {
         void runVoice(turnId, id, messages, controller.signal);
       }
     },
-    [runVoice]
+    [controllerFor, runVoice]
   );
 
   const regenerate = useCallback(
@@ -196,10 +217,24 @@ export function useChorus(provider: ChorusProvider): UseChorusResult {
       const index = all.findIndex((t) => t.id === turnId);
       if (index < 0) return;
       const turn = all[index];
+      if (!turn) return;
+
+      // If this voice fed an existing synthesis, that synthesis no longer
+      // reflects its sources — mark it stale.
+      if (turn.synthesis?.sourceVoiceIds.includes(voiceId)) {
+        setTurns((prev) =>
+          prev.map((t) =>
+            t.id === turnId && t.synthesis
+              ? { ...t, synthesis: { ...t.synthesis, stale: true } }
+              : t
+          )
+        );
+      }
+
       const messages = buildVoiceMessages(all.slice(0, index), voiceId, turn.prompt);
-      void runVoice(turnId, voiceId, messages, ensureController().signal);
+      void runVoice(turnId, voiceId, messages, controllerFor(turnId).signal);
     },
-    [ensureController, runVoice]
+    [controllerFor, runVoice]
   );
 
   const synthesize = useCallback(
@@ -210,28 +245,38 @@ export function useChorus(provider: ChorusProvider): UseChorusResult {
       const sources = turn.voiceIds
         .map((id) => ({ voice: VOICES_BY_ID[id], answer: turn.answers[id] }))
         .filter(
-          (x) =>
-            x.voice && x.answer && x.answer.text.trim() && x.answer.status !== "error"
+          (x): x is { voice: Voice; answer: Answer } =>
+            Boolean(
+              x.voice && x.answer && x.answer.text.trim() && x.answer.status !== "error"
+            )
         )
         .map((x) => ({ voice: x.voice, text: x.answer.text }));
       if (sources.length === 0) return;
 
-      const signal = ensureController().signal;
+      // Snapshot the exact source set so the card label matches the body.
+      const sourceVoiceIds = sources.map((s) => s.voice.id);
+      const signal = controllerFor(turnId).signal;
       const startedAt = performance.now();
 
-      const patchSynthesis = (patch: Partial<Answer>) => {
+      const patchSynthesis = (patch: Partial<Synthesis>) => {
         setTurns((prev) =>
           prev.map((t) => {
             if (t.id !== turnId) return t;
-            const base: Answer =
-              t.synthesis ?? { voiceId: CONDUCTOR.id, status: "idle", text: "" };
+            const base: Synthesis =
+              t.synthesis ?? { status: "idle", text: "", sourceVoiceIds, stale: false };
             return { ...t, synthesis: { ...base, ...patch } };
           })
         );
       };
 
       setActiveCount((c) => c + 1);
-      patchSynthesis({ status: "thinking", text: "", error: undefined });
+      patchSynthesis({
+        status: "thinking",
+        text: "",
+        error: undefined,
+        sourceVoiceIds,
+        stale: false,
+      });
 
       void (async () => {
         try {
@@ -241,11 +286,12 @@ export function useChorus(provider: ChorusProvider): UseChorusResult {
               setTurns((prev) =>
                 prev.map((t) => {
                   if (t.id !== turnId) return t;
-                  const base: Answer =
+                  const base: Synthesis =
                     t.synthesis ?? {
-                      voiceId: CONDUCTOR.id,
                       status: "streaming",
                       text: "",
+                      sourceVoiceIds,
+                      stale: false,
                     };
                   return {
                     ...t,
@@ -261,30 +307,24 @@ export function useChorus(provider: ChorusProvider): UseChorusResult {
             latencyMs: Math.round(performance.now() - startedAt),
           });
         } catch (err) {
-          if ((err as Error)?.name === "AbortError") {
-            patchSynthesis({ status: "done" });
-          } else {
-            patchSynthesis({
-              status: "error",
-              error: (err as Error)?.message ?? "Synthesis failed.",
-            });
-          }
+          patchSynthesis(classifyStreamError(err, "Synthesis failed."));
         } finally {
           setActiveCount((c) => Math.max(0, c - 1));
         }
       })();
     },
-    [ensureController, provider]
+    [controllerFor, provider]
   );
 
   const stop = useCallback(() => {
-    controllerRef.current?.abort();
-  }, []);
+    abortAll();
+  }, [abortAll]);
 
   const clear = useCallback(() => {
-    controllerRef.current?.abort();
+    abortAll();
+    controllersRef.current.clear();
     setTurns([]);
-  }, []);
+  }, [abortAll]);
 
   return {
     turns,

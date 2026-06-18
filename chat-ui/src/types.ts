@@ -44,6 +44,23 @@ export interface ChatMessage {
   content: string;
 }
 
+/**
+ * The Conductor's best-of synthesis for a turn. It snapshots the exact set of
+ * voices it was distilled from (`sourceVoiceIds`) so the displayed label can
+ * never disagree with the synthesized body, and flags itself `stale` when one
+ * of those source answers changes afterward.
+ */
+export interface Synthesis {
+  status: AnswerStatus;
+  text: string;
+  error?: string;
+  latencyMs?: number;
+  /** Voice ids this synthesis was built from, snapshotted at synth time. */
+  sourceVoiceIds: VoiceId[];
+  /** True once a source answer changed after this synthesis was produced. */
+  stale: boolean;
+}
+
 /** A single round: one user prompt + every voice's answer to it. */
 export interface ChorusTurn {
   id: string;
@@ -52,11 +69,8 @@ export interface ChorusTurn {
   voiceIds: VoiceId[];
   answers: Record<VoiceId, Answer>;
   createdAt: number;
-  /**
-   * The Conductor's best-of synthesis for this turn. Undefined until the user
-   * requests it; reuses the Answer shape (with voiceId === Conductor's id).
-   */
-  synthesis?: Answer;
+  /** The Conductor's best-of synthesis; undefined until the user requests it. */
+  synthesis?: Synthesis;
 }
 
 /** A streamed chunk emitted by a provider for one voice. */

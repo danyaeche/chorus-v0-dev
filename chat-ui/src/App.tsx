@@ -3,6 +3,7 @@ import { Composer } from "./components/Composer";
 import { TurnView } from "./components/TurnView";
 import { VoiceLegend, VoicePicker } from "./components/VoicePicker";
 import { mockProvider } from "./mockProvider";
+import type { Voice } from "./types";
 import { useChorus } from "./useChorus";
 import { DEFAULT_VOICE_IDS, VOICES, VOICES_BY_ID } from "./voices";
 
@@ -18,17 +19,32 @@ export default function App() {
     useChorus(mockProvider);
   const [selected, setSelected] = useState<string[]>(DEFAULT_VOICE_IDS);
   const scrollRef = useRef<HTMLDivElement>(null);
+  // Whether the viewport is "pinned" to the bottom. We only auto-follow
+  // streaming output while pinned, so a user who scrolls up to read one column
+  // isn't yanked back down every time another voice emits a token.
+  const pinnedRef = useRef(true);
 
-  const selectedVoices = useMemo(
-    () => selected.map((id) => VOICES_BY_ID[id]).filter(Boolean),
+  const selectedVoices = useMemo<Voice[]>(
+    () =>
+      selected
+        .map((id) => VOICES_BY_ID[id])
+        .filter((v): v is Voice => Boolean(v)),
     [selected]
   );
 
-  // Keep the latest turn in view as answers stream in.
-  useEffect(() => {
+  function handleScroll() {
     const el = scrollRef.current;
     if (!el) return;
-    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    pinnedRef.current = distanceFromBottom < 80;
+  }
+
+  // Follow streaming output only when pinned. Jump instantly (no smooth
+  // animation) so per-token updates don't fight the user's own scrolling.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || !pinnedRef.current) return;
+    el.scrollTop = el.scrollHeight;
   }, [turns]);
 
   function toggleVoice(id: string) {
@@ -38,6 +54,8 @@ export default function App() {
   }
 
   function handleSubmit(prompt: string) {
+    // Submitting your own message should always scroll to it.
+    pinnedRef.current = true;
     ask(prompt, selected);
   }
 
@@ -73,7 +91,11 @@ export default function App() {
       </header>
 
       {/* Conversation */}
-      <main ref={scrollRef} className="scrollbar-slim flex-1 overflow-y-auto">
+      <main
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="scrollbar-slim flex-1 overflow-y-auto"
+      >
         <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6">
           {hasTurns ? (
             <div className="space-y-8">
