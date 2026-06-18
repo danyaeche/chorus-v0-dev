@@ -1,11 +1,9 @@
-'use client';
-
 import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/lib/router';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { advanceSignoffAction } from '@/app/actions';
+import { advanceSignoffAction } from '@/lib/actions';
 import type { SignoffState } from '@/types/enums';
 
 const NEXT: Record<SignoffState, SignoffState | null> = {

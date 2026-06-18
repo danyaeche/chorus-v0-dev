@@ -89,7 +89,7 @@ export function summarizePackage(items: PackageItem[]): PackageSummary {
 
 /**
  * The hard gate: external reviewers cannot be invited until the package is
- * Complete. Used by the invite server action and surfaced in the UI.
+ * Complete. Used by the invite mutation helper and surfaced in the UI.
  */
 export function canInviteReviewers(items: PackageItem[]): boolean {
   return summarizePackage(items).state === 'complete';

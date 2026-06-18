@@ -1,5 +1,5 @@
-import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { Link } from '@/lib/router';
+import { notFound } from '@/lib/router';
 import { Box, FileText } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
 import { PackagePanel } from '@/components/package-panel';
@@ -31,11 +31,10 @@ import {
 } from '@/types/labels';
 import { formatCurrency, formatDate, formatNumber, initials, rev } from '@/utils/format';
 
-export const dynamic = 'force-dynamic';
 
-export default async function PartDetailPage({ params }: { params: Promise<{ partId: string }> }) {
-  const { partId } = await params;
-  const viewer = await requireBrandViewer();
+export default function PartDetailPage({ params }: { params: { partId: string } }) {
+  const { partId } = params;
+  const viewer = requireBrandViewer();
   const detail = getPartDetail(viewer, partId);
   if (!detail) notFound();
 

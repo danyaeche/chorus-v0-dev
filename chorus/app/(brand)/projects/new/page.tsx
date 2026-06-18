@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { Link } from '@/lib/router';
 import { PageHeader } from '@/components/page-header';
 import { CreateProjectForm } from '@/components/create-project-form';
 

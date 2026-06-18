@@ -1,5 +1,5 @@
-import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { Link } from '@/lib/router';
+import { notFound } from '@/lib/router';
 import { PageHeader } from '@/components/page-header';
 import { StatusBadge } from '@/components/status-badge';
 import { SignoffControls } from '@/components/signoff-controls';
@@ -8,13 +8,12 @@ import { requireBrandViewer } from '@/lib/auth/session';
 import { getPart, getReviewer, getProfile, listSignoffs } from '@/lib/db';
 import { signoffStateLabels, signoffStateTone, signoffTopicLabels } from '@/types/labels';
 
-export const dynamic = 'force-dynamic';
 
 const FLOW = ['proposed', 'aligned', 'signed'] as const;
 
-export default async function SignoffsPage({ params }: { params: Promise<{ partId: string }> }) {
-  const { partId } = await params;
-  const viewer = await requireBrandViewer();
+export default function SignoffsPage({ params }: { params: { partId: string } }) {
+  const { partId } = params;
+  const viewer = requireBrandViewer();
   const part = getPart(viewer, partId);
   if (!part) notFound();
   const signoffs = listSignoffs(viewer, partId);

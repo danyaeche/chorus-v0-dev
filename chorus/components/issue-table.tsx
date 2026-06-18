@@ -1,7 +1,5 @@
-'use client';
-
 import { useMemo, useState } from 'react';
-import Link from 'next/link';
+import { Link } from '@/lib/router';
 import {
   type ColumnDef,
   flexRender,
@@ -133,7 +131,6 @@ export function IssueTable({ rows }: { rows: IssueRow[] }) {
   }, [rows, statusFilter, query]);
 
   // TanStack Table returns non-memoizable functions; React Compiler skips it.
-  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: filtered,
     columns,

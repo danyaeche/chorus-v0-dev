@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { Link } from '@/lib/router';
 import { AlertTriangle, ArrowLeft } from 'lucide-react';
 import { StatusBadge, ToneDot } from '@/components/status-badge';
 import { CommentForm } from '@/components/comment-form';
@@ -18,14 +18,13 @@ import {
 } from '@/types/labels';
 import { rev, timeAgo } from '@/utils/format';
 
-export const dynamic = 'force-dynamic';
 
-export default async function SupplierIssuePage({
+export default function SupplierIssuePage({
   params,
 }: {
-  params: Promise<{ token: string; issueId: string }>;
+  params: { token: string; issueId: string };
 }) {
-  const { token, issueId } = await params;
+  const { token, issueId } = params;
   const viewer = resolveReviewerToken(token, new Date().toISOString());
   if (!viewer) return <Invalid />;
 

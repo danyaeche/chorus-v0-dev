@@ -1,5 +1,5 @@
-import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { Link } from '@/lib/router';
+import { notFound } from '@/lib/router';
 import { Plus } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
 import { PartsTable } from '@/components/parts-table';
@@ -25,15 +25,14 @@ import {
 } from '@/types/labels';
 import { formatDate, rev } from '@/utils/format';
 
-export const dynamic = 'force-dynamic';
 
-export default async function ProjectDetailPage({
+export default function ProjectDetailPage({
   params,
 }: {
-  params: Promise<{ projectId: string }>;
+  params: { projectId: string };
 }) {
-  const { projectId } = await params;
-  const viewer = await requireBrandViewer();
+  const { projectId } = params;
+  const viewer = requireBrandViewer();
   const project = getProject(viewer, projectId);
   if (!project) notFound();
 

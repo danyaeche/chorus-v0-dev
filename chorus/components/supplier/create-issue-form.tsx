@@ -1,7 +1,5 @@
-'use client';
-
 import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/lib/router';
 import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -9,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
-import { createIssueAction } from '@/app/supplier/actions';
+import { createIssueAction } from '@/lib/supplier-actions';
 import { ISSUE_TYPES, ISSUE_CATEGORIES, ISSUE_SEVERITIES } from '@/types/enums';
 import { issueTypeLabels, issueCategoryLabels, issueSeverityLabels } from '@/types/labels';
 import type { IssueCategory, IssueSeverity, IssueType } from '@/types/enums';

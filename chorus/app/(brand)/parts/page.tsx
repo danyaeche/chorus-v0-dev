@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { Link } from '@/lib/router';
 import { Plus } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
 import { PartsTable } from '@/components/parts-table';
@@ -7,13 +7,13 @@ import { Card } from '@/components/ui/card';
 import { requireBrandViewer } from '@/lib/auth/session';
 import { listParts, listProjects } from '@/lib/db';
 
-export default async function PartsPage({
+export default function PartsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ project?: string }>;
+  searchParams: { project?: string };
 }) {
-  const { project } = await searchParams;
-  const viewer = await requireBrandViewer();
+  const { project } = searchParams;
+  const viewer = requireBrandViewer();
   const projects = listProjects(viewer);
   const parts = listParts(viewer, project ? { projectId: project } : {});
 

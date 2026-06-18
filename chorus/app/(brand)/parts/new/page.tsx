@@ -1,11 +1,11 @@
-import Link from 'next/link';
+import { Link } from '@/lib/router';
 import { PageHeader } from '@/components/page-header';
 import { CreatePartForm } from '@/components/create-part-form';
 import { requireBrandViewer } from '@/lib/auth/session';
 import { listProjects } from '@/lib/db';
 
-export default async function NewPartPage() {
-  const viewer = await requireBrandViewer();
+export default function NewPartPage() {
+  const viewer = requireBrandViewer();
   const projects = listProjects(viewer);
   return (
     <>

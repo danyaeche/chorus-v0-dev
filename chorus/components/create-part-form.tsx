@@ -1,6 +1,4 @@
-'use client';
-
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/lib/router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
@@ -9,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import type { z } from 'zod';
-import { createPartAction } from '@/app/actions';
+import { createPartAction } from '@/lib/actions';
 import { createPartSchema, type CreatePartInput } from '@/lib/validation';
 
 type PartFormValues = z.input<typeof createPartSchema>;

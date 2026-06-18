@@ -1,8 +1,6 @@
-'use client';
-
 import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { useRouter } from '@/lib/router';
+import { Link } from '@/lib/router';
 import { Check, Copy, ExternalLink, Lock, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -15,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { inviteReviewerAction } from '@/app/actions';
+import { inviteReviewerAction } from '@/lib/actions';
 import { ACCESS_PERMISSIONS, PROVIDER_ROLES, NDA_STATUSES, CONFIDENTIALITY_LEVELS } from '@/types/enums';
 import { ndaStatusLabels, providerRoleLabels } from '@/types/labels';
 import type { AccessPermission, ConfidentialityLevel, NdaStatus, ProviderRole } from '@/types/enums';

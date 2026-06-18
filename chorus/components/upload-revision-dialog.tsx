@@ -1,7 +1,5 @@
-'use client';
-
 import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/lib/router';
 import { Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -15,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { uploadRevisionAction } from '@/app/actions';
+import { uploadRevisionAction } from '@/lib/actions';
 
 export function UploadRevisionDialog({
   partId,

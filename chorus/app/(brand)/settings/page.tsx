@@ -4,8 +4,8 @@ import { requireBrandViewer } from '@/lib/auth/session';
 import { getOrganization } from '@/lib/db';
 import { isSupabaseConfigured } from '@/lib/env';
 
-export default async function SettingsPage() {
-  const viewer = await requireBrandViewer();
+export default function SettingsPage() {
+  const viewer = requireBrandViewer();
   const org = getOrganization(viewer);
 
   return (

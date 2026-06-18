@@ -1,11 +1,9 @@
-'use client';
-
 import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/lib/router';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { setImplementationAction } from '@/app/actions';
+import { setImplementationAction } from '@/lib/actions';
 import type { ImplementationState } from '@/types/enums';
 
 export function ImplementationControl({

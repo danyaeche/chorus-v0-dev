@@ -1,11 +1,9 @@
-'use client';
-
 import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/lib/router';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { dispositionIssueAction } from '@/app/actions';
+import { dispositionIssueAction } from '@/lib/actions';
 import { BRAND_DECISIONS } from '@/types/enums';
 import { brandDecisionLabels } from '@/types/labels';
 import type { BrandDecision } from '@/types/enums';

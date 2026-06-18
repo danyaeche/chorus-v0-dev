@@ -16,10 +16,9 @@ import { getReviewer, listAccessTokens, listParts, listReviewers } from '@/lib/d
 import { ndaStatusLabels, ndaStatusTone, providerRoleLabels } from '@/types/labels';
 import { formatDate, timeAgo } from '@/utils/format';
 
-export const dynamic = 'force-dynamic';
 
-export default async function ReviewersPage() {
-  const viewer = await requireBrandViewer();
+export default function ReviewersPage() {
+  const viewer = requireBrandViewer();
   const tokens = listAccessTokens(viewer);
   const reviewers = listReviewers(viewer);
   const parts = listParts(viewer).map((p) => ({

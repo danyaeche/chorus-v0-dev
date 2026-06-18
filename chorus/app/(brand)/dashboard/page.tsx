@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { Link } from '@/lib/router';
 import { ArrowRight } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
 import { StatCard } from '@/components/stat-card';
@@ -18,8 +18,8 @@ import {
 } from '@/types/labels';
 import { timeAgo } from '@/utils/format';
 
-export default async function DashboardPage() {
-  const viewer = await requireBrandViewer();
+export default function DashboardPage() {
+  const viewer = requireBrandViewer();
   const stats = getDashboardStats(viewer);
   const projects = listProjectSummaries(viewer);
   const needsAttention = listIssues(viewer)

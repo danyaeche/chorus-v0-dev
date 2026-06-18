@@ -1,5 +1,5 @@
-import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { Link } from '@/lib/router';
+import { notFound } from '@/lib/router';
 import { Lock } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
 import { StatusBadge, ToneDot } from '@/components/status-badge';
@@ -18,13 +18,13 @@ import {
 } from '@/types/labels';
 import { rev, timeAgo } from '@/utils/format';
 
-export default async function DfmDetailPage({
+export default function DfmDetailPage({
   params,
 }: {
-  params: Promise<{ partId: string; dfmId: string }>;
+  params: { partId: string; dfmId: string };
 }) {
-  const { partId, dfmId } = await params;
-  const viewer = await requireBrandViewer();
+  const { partId, dfmId } = params;
+  const viewer = requireBrandViewer();
   const dfm = getDfm(viewer, dfmId);
   const part = getPart(viewer, partId);
   if (!dfm || !part) notFound();
