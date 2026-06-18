@@ -4,7 +4,7 @@ import { Box, FileText, Upload } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
 import { PackagePanel } from '@/components/package-panel';
 import { StatusBadge, ToneDot } from '@/components/status-badge';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { requireBrandViewer } from '@/lib/auth/session';
 import { getPartDetail } from '@/lib/db';
@@ -56,9 +56,9 @@ export default async function PartDetailPage({ params }: { params: Promise<{ par
             <Button size="sm" variant="outline">
               <Upload className="size-4" /> Upload revision
             </Button>
-            <Button asChild size="sm" variant="outline">
-              <Link href="/reviewers">Send to supplier</Link>
-            </Button>
+            <Link href="/reviewers" className={buttonVariants({ size: 'sm', variant: 'outline' })}>
+              Send to supplier
+            </Link>
           </>
         }
       />
@@ -101,11 +101,15 @@ export default async function PartDetailPage({ params }: { params: Promise<{ par
               </li>
             ))}
           </ul>
-          <Button asChild size="sm" className="mt-4 w-full" disabled={!readiness.ready}>
-            <Link href={`/parts/${part.id}/approval`}>
-              {readiness.ready ? 'Approve DFM — freeze & cut steel' : 'Approval gate not met'}
+          {readiness.ready ? (
+            <Link href={`/parts/${part.id}/approval`} className={buttonVariants({ size: 'sm', className: 'mt-4 w-full' })}>
+              Approve DFM — freeze &amp; cut steel
             </Link>
-          </Button>
+          ) : (
+            <Button size="sm" className="mt-4 w-full" disabled>
+              Approval gate not met
+            </Button>
+          )}
         </Card>
       </div>
 

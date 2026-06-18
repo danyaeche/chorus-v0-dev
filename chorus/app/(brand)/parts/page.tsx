@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
 import { PartsTable } from '@/components/parts-table';
-import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { requireBrandViewer } from '@/lib/auth/session';
 import { listParts, listProjects } from '@/lib/db';
@@ -23,11 +23,9 @@ export default async function PartsPage({
         title="Parts"
         subtitle="Every part across the workspace — package, revisions, provider DFMs, and issues"
         actions={
-          <Button asChild size="sm">
-            <Link href="/parts/new">
-              <Plus className="size-4" /> New part
-            </Link>
-          </Button>
+          <Link href="/parts/new" className={buttonVariants({ size: 'sm' })}>
+            <Plus className="size-4" /> New part
+          </Link>
         }
       />
 

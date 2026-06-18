@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
 import { StatCard } from '@/components/stat-card';
-import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
   Table,
@@ -33,11 +33,9 @@ export default async function ProjectsPage() {
         title="Projects"
         subtitle="Every DFM program — one manufacturing partner per provider, per project"
         actions={
-          <Button asChild size="sm">
-            <Link href="/projects/new">
-              <Plus className="size-4" /> New project
-            </Link>
-          </Button>
+          <Link href="/projects/new" className={buttonVariants({ size: 'sm' })}>
+            <Plus className="size-4" /> New project
+          </Link>
         }
       />
 

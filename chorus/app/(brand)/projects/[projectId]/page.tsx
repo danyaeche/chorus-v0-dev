@@ -4,7 +4,7 @@ import { Plus } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
 import { PartsTable } from '@/components/parts-table';
 import { StatCard } from '@/components/stat-card';
-import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { requireBrandViewer } from '@/lib/auth/session';
 import { getProject, listActivity, listParts, listIssues } from '@/lib/db';
@@ -38,9 +38,9 @@ export default async function ProjectDetailPage({
         title={project.name}
         subtitle={project.description ?? undefined}
         actions={
-          <Button asChild size="sm" variant="outline">
-            <Link href="/parts">View parts</Link>
-          </Button>
+          <Link href="/parts" className={buttonVariants({ size: 'sm', variant: 'outline' })}>
+            View parts
+          </Link>
         }
       />
 
@@ -54,11 +54,9 @@ export default async function ProjectDetailPage({
       <Card className="mt-4 overflow-hidden p-0">
         <div className="flex items-center justify-between border-b px-4 py-3">
           <h2 className="font-semibold">Parts</h2>
-          <Button asChild size="sm" variant="ghost">
-            <Link href="/parts">
-              <Plus className="size-4" /> Add part
-            </Link>
-          </Button>
+          <Link href="/parts" className={buttonVariants({ size: 'sm', variant: 'ghost' })}>
+            <Plus className="size-4" /> Add part
+          </Link>
         </div>
         <PartsTable parts={parts} />
       </Card>

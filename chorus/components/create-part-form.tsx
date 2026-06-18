@@ -8,8 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import type { z } from 'zod';
 import { createPartAction } from '@/app/actions';
 import { createPartSchema, type CreatePartInput } from '@/lib/validation';
+
+type PartFormValues = z.input<typeof createPartSchema>;
 import { PART_PROCESSES } from '@/types/enums';
 import { partProcessLabels } from '@/types/labels';
 
@@ -19,7 +22,7 @@ export function CreatePartForm({ projects }: { projects: { id: string; name: str
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<CreatePartInput>({
+  } = useForm<PartFormValues, unknown, CreatePartInput>({
     resolver: zodResolver(createPartSchema),
     defaultValues: { process: 'injection_molded', project_id: projects[0]?.id },
   });

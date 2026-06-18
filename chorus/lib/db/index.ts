@@ -10,7 +10,6 @@
 import { store } from './store';
 import {
   canViewDfm,
-  canViewFile,
   canViewIssue,
   canViewIssueGroup,
   filterVisibleFiles,
@@ -87,7 +86,7 @@ function toIssueView(viewer: Viewer, issue: Issue): IssueView {
     reviewer: getReviewer(issue.created_by_reviewer_id),
     comments: s.comments
       .filter((c) => c.issue_id === issue.id)
-      .filter((c) => {
+      .filter(() => {
         // reviewers only see their own DFM's comment thread
         if (isBrand(viewer)) return true;
         const dfm = dfmById(issue.dfm_id);
@@ -143,6 +142,12 @@ export function listDfmsForPart(viewer: Viewer, partId: UUID): DfmView[] {
     .dfms.filter((d) => d.part_id === partId)
     .filter((d) => canViewDfm(viewer, d))
     .map((d) => toDfmView(viewer, d));
+}
+
+export function getDfm(viewer: Viewer, dfmId: UUID): DfmView | null {
+  const dfm = dfmById(dfmId);
+  if (!dfm || !canViewDfm(viewer, dfm)) return null;
+  return toDfmView(viewer, dfm);
 }
 
 // --- sign-offs ----------------------------------------------------------------
