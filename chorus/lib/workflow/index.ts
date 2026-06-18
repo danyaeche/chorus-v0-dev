@@ -12,6 +12,7 @@ import type {
   PartRevision,
   ProjectState,
   Signoff,
+  SignoffState,
   ValidationState,
 } from '@/types';
 import type { PackageSummary } from '@/types/view';
@@ -115,11 +116,15 @@ export interface ApprovalReadiness {
  *   3. An approved revision is selected/frozen.
  */
 export function dfmApprovalReadiness(input: {
-  issues: Pick<Issue, 'status' | 'brand_decision'>[];
+  issues: Pick<Issue, 'status'>[];
   signoffs: Pick<Signoff, 'state'>[];
   frozenRevision: PartRevision | null;
 }): ApprovalReadiness {
-  const openIssues = input.issues.filter((i) => i.status === 'open' && i.brand_decision == null);
+  // Any issue still 'open' blocks the gate — whether it is awaiting a brand
+  // decision OR was reopened by a failed validation (a fix that did not hold).
+  // A reopened issue keeps its prior brand_decision, so filtering on a null
+  // decision alone would let an unresolved failed fix slip through to steel.
+  const openIssues = input.issues.filter((i) => i.status === 'open');
   const allDispositioned = openIssues.length === 0;
 
   const unsignedSignoffs = input.signoffs.filter((s) => s.state !== 'signed');
@@ -201,11 +206,20 @@ export const ISSUE_STATUS_FLOW: Record<IssueStatus, IssueStatus[]> = {
   closed: [],
 };
 
-export const SIGNOFF_FLOW = {
+export const SIGNOFF_FLOW: Record<SignoffState, readonly SignoffState[]> = {
   proposed: ['aligned'],
   aligned: ['signed', 'proposed'],
   signed: [],
-} as const;
+};
+
+/**
+ * Whether a sign-off may legally move `from -> to`. Sign-offs are first-class
+ * joint agreements, so the brand cannot jump straight from Proposed to Signed —
+ * a reviewer must align first. Enforced by the advance mutation, mirrored in UI.
+ */
+export function canAdvanceSignoff(from: SignoffState, to: SignoffState): boolean {
+  return SIGNOFF_FLOW[from].includes(to);
+}
 
 export const DFM_FLOW = {
   invited: ['in_review'],

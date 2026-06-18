@@ -24,6 +24,7 @@ import {
 } from '@/lib/permissions';
 import type { ReviewerViewer } from '@/lib/permissions/types';
 import {
+  canAdvanceSignoff,
   dfmApprovalReadiness,
   derivePartState,
   deriveIssueStatus,
@@ -91,6 +92,17 @@ function revisionsForPart(partId: UUID): PartRevision[] {
   return store()
     .partRevisions.filter((r) => r.part_id === partId)
     .sort((a, b) => a.rev_index - b.rev_index);
+}
+
+/**
+ * Resolve a revision id but ONLY if it belongs to `partId`. Guards against
+ * freezing / linking a fix to a revision from a different part (a cross-part
+ * data-integrity leak), since revision ids are otherwise globally addressable.
+ */
+function revisionInPart(revId: UUID | null | undefined, partId: UUID): PartRevision | null {
+  if (!revId) return null;
+  const rev = store().partRevisions.find((r) => r.id === revId);
+  return rev && rev.part_id === partId ? rev : null;
 }
 
 /** Revisions of a part the viewer can access, oldest → newest. */
@@ -696,6 +708,14 @@ export function setPackageItemComplete(viewer: Viewer, itemId: UUID, complete: b
   const part = s.parts.find((p) => p.id === item.part_id);
   if (!part || part.organization_id !== viewer.organizationId) return false;
 
+  // The package gate is monotonic once reviewers are in: a required item cannot
+  // be un-completed out from under an in-flight review (it would re-close the
+  // gate and regress the part to draft while a provider is mid-DFM). Mirrors the
+  // invite gate — the package must stay Complete for the life of the review.
+  if (!complete && item.required && s.dfms.some((d) => d.part_id === part.id)) {
+    return false;
+  }
+
   const was = part.package_state;
   item.complete = complete;
   item.completed_by = complete ? viewer.profileId : null;
@@ -817,14 +837,25 @@ export function inviteReviewer(
     s.externalReviewers.push(reviewer);
   }
 
-  // Create the confidential provider DFM, scoped to the part's current revision.
-  const dfm: Dfm = {
-    id: uid('dfm'), organization_id: viewer.organizationId, project_id: part.project_id, part_id: part.id,
-    external_reviewer_id: reviewer.id, provider_role: input.provider_role, state: 'invited',
-    current_revision_id: part.current_revision_id, confidential: true,
-    invited_at: now(), created_at: now(), updated_at: now(),
-  };
-  s.dfms.push(dfm);
+  // Reuse an existing DFM for this (part, reviewer) instead of forking a second
+  // confidential DFM — re-inviting the same provider refreshes access (mints a
+  // new token below), it must not split their issues/threads or double the
+  // part's provider count. A genuinely new invite creates the DFM scoped to the
+  // part's current revision.
+  let dfm = s.dfms.find((d) => d.part_id === part.id && d.external_reviewer_id === reviewer.id);
+  if (dfm) {
+    dfm.provider_role = input.provider_role;
+    if (dfm.state === 'complete') dfm.state = 'in_review'; // a re-invite re-opens the review
+    dfm.updated_at = now();
+  } else {
+    dfm = {
+      id: uid('dfm'), organization_id: viewer.organizationId, project_id: part.project_id, part_id: part.id,
+      external_reviewer_id: reviewer.id, provider_role: input.provider_role, state: 'invited',
+      current_revision_id: part.current_revision_id, confidential: true,
+      invited_at: now(), created_at: now(), updated_at: now(),
+    };
+    s.dfms.push(dfm);
+  }
 
   // Mint the scoped magic-link token (only the hash is stored).
   const rawToken = generateToken();
@@ -1008,11 +1039,28 @@ export function setIssueImplementation(
   const s = store();
   const issue = s.issues.find((i) => i.id === issueId);
   if (!issue || issue.organization_id !== viewer.organizationId) return false;
-  if (input.state === 'implemented' && !input.revision_id) return false;
+  // Implementation tracking only applies to an ACCEPTED issue that is not yet
+  // closed — you never implement a fix for an issue that was never accepted, nor
+  // for one already validated/rejected. (Mirrors the issue-detail UI gating.)
+  if (issue.brand_decision !== 'accepted' || issue.status === 'closed') return false;
+  // A fix must be linked to a revision OF THIS PART — never a foreign part's.
+  if (input.state === 'implemented' && !revisionInPart(input.revision_id, issue.part_id)) {
+    return false;
+  }
 
   const wasImplemented = issue.status === 'implemented';
   issue.implementation_state = input.state;
   issue.implemented_in_revision_id = input.state === 'implemented' ? (input.revision_id ?? null) : null;
+  // Recording a fresh implementation supersedes any prior validation result: a
+  // fix re-implemented after a failed validation must drop back to 'pending' so
+  // the reviewer can validate the new revision. Without this reset the issue is
+  // stuck 'open' forever — deriveIssueStatus short-circuits on validation_failed
+  // before it ever reaches the 'implemented' branch.
+  if (input.state === 'implemented') {
+    issue.validation_state = 'pending';
+    issue.validated_by_reviewer_id = null;
+    issue.validated_at = null;
+  }
   issue.status = deriveIssueStatus(issue);
   issue.updated_at = now();
 
@@ -1093,6 +1141,9 @@ export function advanceSignoff(
   const s = store();
   const signoff = s.signoffs.find((so) => so.id === signoffId && so.organization_id === viewer.organizationId);
   if (!signoff) return false;
+  // Sign-offs are first-class agreements: enforce Proposed → Aligned → Signed
+  // (with an Aligned → Proposed step-back). No jumping straight to Signed.
+  if (!canAdvanceSignoff(signoff.state, nextState)) return false;
 
   signoff.state = nextState;
   if (rationale && rationale.trim()) signoff.rationale = rationale.trim();
@@ -1126,11 +1177,16 @@ export function approveDfm(
   if (!part) return false;
   if (s.dfmApprovals.some((a) => a.part_id === partId)) return false; // already approved
 
+  // The revision being frozen must belong to THIS part — you cannot cut steel
+  // on another part's revision id.
+  const frozen = revisionInPart(input.approved_revision_id, partId);
+  if (!frozen) return false;
+
   // Re-check the entry criteria server-side against the chosen frozen revision.
   const readiness = dfmApprovalReadiness({
     issues: listIssues(viewer, { partId }),
     signoffs: listSignoffs(viewer, partId),
-    frozenRevision: getRevision(input.approved_revision_id),
+    frozenRevision: frozen,
   });
   if (!readiness.ready) return false;
 
