@@ -14,7 +14,8 @@ const SUGGESTIONS = [
 ];
 
 export default function App() {
-  const { turns, isBusy, ask, stop, regenerate, clear } = useChorus(mockProvider);
+  const { turns, isBusy, ask, stop, regenerate, synthesize, clear } =
+    useChorus(mockProvider);
   const [selected, setSelected] = useState<string[]>(DEFAULT_VOICE_IDS);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -76,8 +77,14 @@ export default function App() {
         <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6">
           {hasTurns ? (
             <div className="space-y-8">
-              {turns.map((turn) => (
-                <TurnView key={turn.id} turn={turn} onRegenerate={regenerate} />
+              {turns.map((turn, i) => (
+                <TurnView
+                  key={turn.id}
+                  turn={turn}
+                  index={i}
+                  onRegenerate={regenerate}
+                  onSynthesize={synthesize}
+                />
               ))}
             </div>
           ) : (
@@ -101,6 +108,7 @@ export default function App() {
             isBusy={isBusy}
             canSubmit={selected.length > 0}
             blockedHint={blockedHint}
+            placeholder={hasTurns ? "Ask a follow-up…" : undefined}
           />
         </div>
       </div>

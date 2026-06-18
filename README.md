@@ -35,23 +35,42 @@ npm run lint     # typecheck only (tsc --noEmit)
    voice simultaneously.
 3. **Compare** — each voice streams its answer into its own column, finishing at
    its own pace. Copy or regenerate any single answer.
-4. **Continue** — ask follow-ups; each round is its own row of answers. Use
-   _New chorus_ to start over.
+4. **Synthesize** — hit _✦ Synthesize best answer_ to have the **Conductor**
+   read every voice's answer and distill one merged best-of response.
+5. **Follow up** — ask again and the conversation **threads**: each voice
+   carries its own history (the prompts and its own prior answers) into the next
+   turn, so follow-ups have context. Use _New chorus_ to start over.
+
+### Threading model
+
+Each voice keeps its **own** thread — it sees the user prompts and its own
+prior answers from the turns it took part in. A voice added partway through a
+conversation starts fresh from the moment it joins. Synthesis is a per-turn
+artifact and is not fed back into any voice's thread.
 
 ## Project layout
 
 ```
 src/
   types.ts          # domain types + the ChorusProvider contract
-  voices.ts         # the roster of available models ("voices")
+  voices.ts         # the roster of voices + the Conductor (synthesis)
   mockProvider.ts   # simulated streaming provider (swap for a real backend)
-  useChorus.ts      # state + fan-out orchestration hook
+  useChorus.ts      # state, threading + fan-out + synthesis orchestration
   App.tsx           # layout: header, conversation, composer dock
-  components/        # VoicePicker, Composer, TurnView, AnswerCard, VoiceAvatar
+  components/        # VoicePicker, Composer, TurnView, AnswerCard,
+                     # SynthesisCard, VoiceAvatar
 ```
 
 ### Wiring a real backend
 
 Replace `mockProvider` with any object implementing the `ChorusProvider`
-interface in `src/types.ts` (e.g. `fetch` + `ReadableStream`/SSE). The UI and
-orchestration are provider-agnostic, so nothing else needs to change.
+interface in `src/types.ts`. It has two methods:
+
+- `ask(voice, messages, onChunk, signal)` — `messages` is the voice's threaded
+  history (oldest first, ending with the current user prompt), which maps
+  directly onto a chat-completions request.
+- `synthesize({ prompt, answers }, onChunk, signal)` — the Conductor step;
+  `answers` is every voice's text for the turn.
+
+The UI and orchestration are provider-agnostic, so nothing else needs to
+change.

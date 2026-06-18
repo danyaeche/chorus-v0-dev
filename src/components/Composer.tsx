@@ -7,10 +7,18 @@ interface Props {
   canSubmit: boolean;
   /** Reason submit is blocked (e.g. no voices selected), shown as a hint. */
   blockedHint?: string;
+  placeholder?: string;
 }
 
 /** The prompt input. Enter submits; Shift+Enter inserts a newline. */
-export function Composer({ onSubmit, onStop, isBusy, canSubmit, blockedHint }: Props) {
+export function Composer({
+  onSubmit,
+  onStop,
+  isBusy,
+  canSubmit,
+  blockedHint,
+  placeholder,
+}: Props) {
   const [value, setValue] = useState("");
   const taRef = useRef<HTMLTextAreaElement>(null);
 
@@ -46,7 +54,7 @@ export function Composer({ onSubmit, onStop, isBusy, canSubmit, blockedHint }: P
           onChange={autogrow}
           onKeyDown={handleKeyDown}
           rows={1}
-          placeholder="Ask the chorus anything…"
+          placeholder={placeholder ?? "Ask the chorus anything…"}
           className="max-h-[200px] flex-1 resize-none bg-transparent px-3 py-2.5 text-[15px] leading-relaxed text-neutral-100 placeholder:text-neutral-500 focus:outline-none"
         />
         {isBusy ? (

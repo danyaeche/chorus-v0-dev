@@ -49,3 +49,16 @@ export const VOICES_BY_ID: Record<string, Voice> = Object.fromEntries(
 
 /** Voices selected by default on first load. */
 export const DEFAULT_VOICE_IDS = ["opus", "gpt", "gemini"];
+
+/**
+ * The Conductor is a synthetic "voice" that doesn't sing in the chorus — it
+ * listens to all the others and distills their best-of answer. It is never
+ * shown in the picker; it only appears on the synthesis card.
+ */
+export const CONDUCTOR: Voice = {
+  id: "conductor",
+  name: "Conductor",
+  vendor: "Chorus",
+  accent: "#a78bfa",
+  blurb: "Synthesizes the strongest answer from every voice.",
+};
