@@ -1,54 +1,68 @@
 # chorus-v0-dev
 
-Dev repo for **v0 of Chorus AI** — _ask once, hear every voice._
+Dev repo for v0 of Chorus — a DFM-only, multi-provider workspace for hardware
+teams coordinating manufacturing feedback with external reviewers/manufacturers.
 
-Chorus sends a single prompt to several AI models at the same time and shows
-their answers side by side so you can compare and keep the one that sings.
+The application lives in [`chorus/`](./chorus) — a single full-stack Next.js
+(App Router) app: TypeScript · Tailwind · shadcn/ui · TanStack Table · React Hook
+Form · Zod · Supabase (Postgres / Auth / Storage).
 
-## Stack
+```bash
+cd chorus
+pnpm install
+pnpm dev
+```
+
+See [`chorus/README.md`](./chorus/README.md) for the data model, the workflow
+invariants (package gate, per-DFM revision pointers, provider isolation, issue
+state machine, sign-offs, DFM approval), the repo layout, and deployment notes.
+
+> Runs in **demo mode** out of the box (in-memory seed of the TM-4 Bike Program),
+> or connect Supabase via `chorus/.env.example`.
+
+---
+
+## Also in this repo: multi-model chat UI exploration (root)
+
+> **Heads-up — two parallel "Chorus" explorations live here.** The DFM workspace
+> above (in [`chorus/`](./chorus)) is one. The Vite/React app at the repo root
+> (below) is a separate v0 exploration of a *multi-model chat* idea, added by the
+> `refine-chorus-ui-flow` PR. They share the repo and the name but are otherwise
+> independent; which direction to keep is a product decision for review.
+
+**Concept:** _ask once, hear every voice._ A single prompt is sent to several AI
+models at the same time and their answers stream in side by side so you can
+compare them, synthesize a best-of answer, and keep the conversation going.
+
+### Stack
 
 - [Vite](https://vitejs.dev/) + [React 18](https://react.dev/) + TypeScript
 - [Tailwind CSS](https://tailwindcss.com/) for styling
-- No backend required for v0 — answers are produced by a **mock provider** that
-  simulates per-voice streaming.
+- No backend required — answers come from a **mock provider** that simulates
+  per-voice streaming.
 
-## Getting started
+### Getting started
 
 ```bash
 npm install
 npm run dev      # http://localhost:5173
 ```
 
-Other scripts:
+Other scripts: `npm run build` (typecheck + production build),
+`npm run preview`, `npm run lint` (typecheck only).
 
-```bash
-npm run build    # typecheck + production build
-npm run preview  # serve the production build locally
-npm run lint     # typecheck only (tsc --noEmit)
-```
+### The UI flow
 
-## The UI flow
+1. **Pick your voices** — choose which models join the chorus.
+2. **Ask once** — the prompt fans out to every selected voice simultaneously.
+3. **Compare** — each voice streams into its own column; copy or regenerate any
+   single answer.
+4. **Synthesize** — the **Conductor** distills every voice's answer into one
+   merged best-of response.
+5. **Follow up** — the conversation **threads**: each voice carries its own
+   history into the next turn.
 
-1. **Pick your voices** — choose which models join the chorus (chip row above
-   the composer).
-2. **Ask once** — type a prompt and hit Enter. It fans out to every selected
-   voice simultaneously.
-3. **Compare** — each voice streams its answer into its own column, finishing at
-   its own pace. Copy or regenerate any single answer.
-4. **Synthesize** — hit _✦ Synthesize best answer_ to have the **Conductor**
-   read every voice's answer and distill one merged best-of response.
-5. **Follow up** — ask again and the conversation **threads**: each voice
-   carries its own history (the prompts and its own prior answers) into the next
-   turn, so follow-ups have context. Use _New chorus_ to start over.
-
-### Threading model
-
-Each voice keeps its **own** thread — it sees the user prompts and its own
-prior answers from the turns it took part in. A voice added partway through a
-conversation starts fresh from the moment it joins. Synthesis is a per-turn
-artifact and is not fed back into any voice's thread.
-
-## Project layout
+### Layout
 
 ```
 src/
@@ -64,7 +78,7 @@ src/
 ### Wiring a real backend
 
 Replace `mockProvider` with any object implementing the `ChorusProvider`
-interface in `src/types.ts`. It has two methods:
+interface in `src/types.ts`:
 
 - `ask(voice, messages, onChunk, signal)` — `messages` is the voice's threaded
   history (oldest first, ending with the current user prompt), which maps
@@ -72,5 +86,4 @@ interface in `src/types.ts`. It has two methods:
 - `synthesize({ prompt, answers }, onChunk, signal)` — the Conductor step;
   `answers` is every voice's text for the turn.
 
-The UI and orchestration are provider-agnostic, so nothing else needs to
-change.
+The UI and orchestration are provider-agnostic, so nothing else needs to change.
