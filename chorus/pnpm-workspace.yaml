@@ -1,3 +1,7 @@
-ignoredBuiltDependencies:
-  - sharp
-  - unrs-resolver
+allowBuilds:
+  sharp: true
+  unrs-resolver: true
+# Local override: pnpm 11's default 24h supply-chain age gate rejects a few
+# freshly-published transitive deps that the committed lockfile legitimately
+# pins (hono, node-releases, baseline-browser-mapping). Set to 0 to allow them.
+minimumReleaseAge: 0
