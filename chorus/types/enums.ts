@@ -160,6 +160,7 @@ export const ACTIVITY_TYPES = [
   'decision_recorded',
   'validation_requested',
   'issue_closed',
+  'validation_failed',
   'signoff_recorded',
   'dfm_approved',
   'package_completed',
@@ -182,3 +183,13 @@ export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 
 export const PROJECT_STATUSES = ['active', 'on_hold', 'archived'] as const;
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
+
+/**
+ * Derived program state shown on the project hub. Unlike `ProjectStatus` (the
+ * stored lifecycle flag), this is computed from the project's parts:
+ *   - setup:        no part has an active DFM yet
+ *   - dfm_active:   at least one part is in DFM review
+ *   - dfm_approved: every part is DFM-approved (cleared to cut steel)
+ */
+export const PROJECT_STATES = ['setup', 'dfm_active', 'dfm_approved'] as const;
+export type ProjectState = (typeof PROJECT_STATES)[number];

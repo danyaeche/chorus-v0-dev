@@ -2,10 +2,12 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { PageHeader } from '@/components/page-header';
 import { DispositionForm } from '@/components/disposition-form';
+import { ImplementationControl } from '@/components/implementation-control';
+import { CommentForm } from '@/components/comment-form';
 import { StatusBadge, ToneDot } from '@/components/status-badge';
 import { Card } from '@/components/ui/card';
 import { requireBrandViewer } from '@/lib/auth/session';
-import { getIssue, getPart, getProfile, getReviewer } from '@/lib/db';
+import { getIssue, getPart, getProfile, getReviewer, listPartRevisions } from '@/lib/db';
 import {
   brandDecisionLabels,
   brandDecisionTone,
@@ -33,6 +35,7 @@ export default async function IssueDetailPage({ params }: { params: Promise<{ is
 
   const part = getPart(viewer, issue.part_id);
   const reviewer = getReviewer(issue.created_by_reviewer_id);
+  const revisions = listPartRevisions(viewer, issue.part_id);
   const span = {
     from: issue.created_on_revision?.rev_label ?? null,
     to: issue.implemented_in_revision?.rev_label ?? null,
@@ -132,6 +135,36 @@ export default async function IssueDetailPage({ params }: { params: Promise<{ is
             </div>
           </Card>
 
+          {/* Implementation linking */}
+          <Card className="p-5">
+            <h2 className="font-semibold">Implementation</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Link the fix to a later revision. Marking it implemented moves the issue to validation.
+            </p>
+            <div className="mt-2 flex items-center gap-2 text-sm">
+              <span className="text-muted-foreground">Status:</span>
+              <StatusBadge label={implementationStateLabels[issue.implementation_state]} tone={issue.implementation_state === 'implemented' ? 'success' : issue.implementation_state === 'in_progress' ? 'info' : 'neutral'} />
+              {issue.implemented_in_revision ? (
+                <span className="text-muted-foreground">· in {rev(issue.implemented_in_revision.rev_label)}</span>
+              ) : null}
+            </div>
+            <div className="mt-3">
+              {issue.brand_decision !== 'accepted' ? (
+                <p className="text-xs text-muted-foreground">Accept the issue before linking an implementation.</p>
+              ) : issue.status === 'closed' ? (
+                <p className="text-xs text-emerald-600">Closed — fix validated.</p>
+              ) : (
+                <ImplementationControl
+                  issueId={issue.id}
+                  revisions={revisions.map((r) => ({ id: r.id, label: r.rev_label }))}
+                  createdOnRevisionId={issue.created_on_revision_id}
+                  implementationState={issue.implementation_state}
+                  implementedInRevisionId={issue.implemented_in_revision_id}
+                />
+              )}
+            </div>
+          </Card>
+
           {/* Comment thread */}
           <Card className="p-5">
             <h2 className="font-semibold">Discussion</h2>
@@ -158,6 +191,9 @@ export default async function IssueDetailPage({ params }: { params: Promise<{ is
                 <li className="text-sm text-muted-foreground">No comments yet.</li>
               ) : null}
             </ul>
+            <div className="mt-4 border-t pt-4">
+              <CommentForm issueId={issue.id} />
+            </div>
           </Card>
         </div>
 

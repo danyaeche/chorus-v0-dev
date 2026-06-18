@@ -1,12 +1,15 @@
 import Link from 'next/link';
-import { AlertTriangle, Check, Download, Eye, Lock, MessageSquare, ShieldCheck, X } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Check, Download, Eye, Lock, ShieldCheck, X } from 'lucide-react';
 import { StatusBadge } from '@/components/status-badge';
+import { PortalBeacon } from '@/components/supplier/portal-beacon';
 import { Card } from '@/components/ui/card';
 import { getReviewerPortal, resolveReviewerToken } from '@/lib/db';
 import { ACCESS_PERMISSIONS } from '@/types/enums';
 import { dfmStateLabels, dfmStateTone, ndaStatusLabels } from '@/types/labels';
 import { formatDate, rev, timeAgo } from '@/utils/format';
-import type { AccessPermission } from '@/types/enums';
+import type { AccessPermission, AuditAction } from '@/types/enums';
+
+export const dynamic = 'force-dynamic';
 
 const PERMISSION_LABEL: Record<AccessPermission, string> = {
   view_files: 'View files',
@@ -14,6 +17,18 @@ const PERMISSION_LABEL: Record<AccessPermission, string> = {
   comment: 'Comment',
   create_issues: 'Create issues',
   validate_fixes: 'Validate fixes',
+};
+
+const AUDIT_LABEL: Record<AuditAction, string> = {
+  magic_link_opened: 'Magic link opened',
+  nda_accepted: 'NDA accepted',
+  file_viewed: 'File viewed',
+  file_downloaded: 'File downloaded',
+  issue_raised: 'Issue raised',
+  comment_posted: 'Comment posted',
+  validation_submitted: 'Validation submitted',
+  access_revoked: 'Access revoked',
+  access_granted: 'Access granted',
 };
 
 export default async function SupplierPortalPage({ params }: { params: Promise<{ token: string }> }) {
@@ -35,10 +50,12 @@ export default async function SupplierPortalPage({ params }: { params: Promise<{
   const portal = getReviewerPortal(viewer);
   if (!portal) return null;
 
-  const { reviewer, project, parts, token: tk, activity } = portal;
+  const { reviewer, project, parts, token: tk, audit } = portal;
 
   return (
     <div className="mx-auto max-w-4xl p-6">
+      <PortalBeacon token={token} />
+
       {/* Invite header */}
       <Card className="overflow-hidden p-0">
         <div className="bg-foreground p-6 text-background">
@@ -96,10 +113,14 @@ export default async function SupplierPortalPage({ params }: { params: Promise<{
 
       {/* Parts to review */}
       <div className="mt-6">
-        <h2 className="mb-2 font-semibold">{parts.length} parts to review</h2>
+        <h2 className="mb-2 font-semibold">{parts.length} part{parts.length === 1 ? '' : 's'} to review</h2>
         <Card className="divide-y p-0">
           {parts.map((p) => (
-            <div key={p.part.id} className="flex items-center justify-between gap-3 px-4 py-3">
+            <Link
+              key={p.part.id}
+              href={`/supplier/${token}/parts/${p.part.id}`}
+              className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-muted/40"
+            >
               <div>
                 <div className="font-medium">{p.part.name}</div>
                 <div className="text-xs text-muted-foreground">
@@ -107,15 +128,13 @@ export default async function SupplierPortalPage({ params }: { params: Promise<{
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                {p.dfm ? (
-                  <StatusBadge label={dfmStateLabels[p.dfm.state]} tone={dfmStateTone[p.dfm.state]} />
-                ) : null}
+                {p.dfm ? <StatusBadge label={dfmStateLabels[p.dfm.state]} tone={dfmStateTone[p.dfm.state]} /> : null}
                 {p.open_issue_count > 0 ? (
                   <span className="text-xs text-amber-600">{p.open_issue_count} open</span>
                 ) : null}
-                <span className="text-xs text-muted-foreground">View / raise issues</span>
+                <ArrowRight className="size-4 text-muted-foreground" />
               </div>
-            </div>
+            </Link>
           ))}
         </Card>
         <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -126,39 +145,33 @@ export default async function SupplierPortalPage({ params }: { params: Promise<{
 
       {/* Activity / audit log */}
       <div className="mt-6">
-        <h2 className="mb-2 flex items-center gap-2 font-semibold">Your activity · audit log</h2>
+        <h2 className="mb-2 flex items-center gap-2 font-semibold">Your access log</h2>
         <Card className="p-5">
           <ul className="space-y-2.5 text-sm">
-            <AuditRow icon={<Eye className="size-3.5" />} label="Magic link opened" when={tk.last_opened_at} />
-            {activity.map((e) => (
-              <li key={e.id} className="flex items-center justify-between gap-3">
-                <span className="flex items-center gap-2">
-                  <MessageSquare className="size-3.5 text-muted-foreground" /> {e.summary}
-                </span>
-                <span className="shrink-0 text-xs text-muted-foreground">{timeAgo(e.created_at)}</span>
-              </li>
-            ))}
+            {audit.length === 0 ? (
+              <li className="text-muted-foreground">No access events yet.</li>
+            ) : (
+              audit.map((e) => (
+                <li key={e.id} className="flex items-center justify-between gap-3">
+                  <span className="flex items-center gap-2">
+                    <Eye className="size-3.5 text-muted-foreground" /> {AUDIT_LABEL[e.action]}
+                  </span>
+                  <span className="shrink-0 text-xs text-muted-foreground">{timeAgo(e.created_at)}</span>
+                </li>
+              ))
+            )}
             {viewer.permissions.includes('download') ? (
-              <AuditRow icon={<Download className="size-3.5" />} label="Download permitted (watermarked)" when={null} />
+              <li className="flex items-center justify-between gap-3 text-muted-foreground">
+                <span className="flex items-center gap-2">
+                  <Download className="size-3.5" /> Download permitted (watermarked)
+                </span>
+              </li>
             ) : null}
           </ul>
         </Card>
       </div>
 
-      <p className="mt-6 text-center text-xs text-muted-foreground">
-        Powered by Chorus · <Link href="/dashboard" className="underline">brand view</Link>
-      </p>
+      <p className="mt-6 text-center text-xs text-muted-foreground">Powered by Chorus</p>
     </div>
-  );
-}
-
-function AuditRow({ icon, label, when }: { icon: React.ReactNode; label: string; when: string | null }) {
-  return (
-    <li className="flex items-center justify-between gap-3">
-      <span className="flex items-center gap-2">
-        <span className="text-muted-foreground">{icon}</span> {label}
-      </span>
-      <span className="shrink-0 text-xs text-muted-foreground">{when ? timeAgo(when) : ''}</span>
-    </li>
   );
 }

@@ -1,8 +1,7 @@
-import { Plus } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
 import { StatCard } from '@/components/stat-card';
 import { StatusBadge } from '@/components/status-badge';
-import { Button } from '@/components/ui/button';
+import { InviteReviewerDialog } from '@/components/invite-reviewer-dialog';
 import { Card } from '@/components/ui/card';
 import {
   Table,
@@ -13,14 +12,21 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { requireBrandViewer } from '@/lib/auth/session';
-import { getReviewer, listAccessTokens, listReviewers } from '@/lib/db';
+import { getReviewer, listAccessTokens, listParts, listReviewers } from '@/lib/db';
 import { ndaStatusLabels, ndaStatusTone, providerRoleLabels } from '@/types/labels';
 import { formatDate, timeAgo } from '@/utils/format';
+
+export const dynamic = 'force-dynamic';
 
 export default async function ReviewersPage() {
   const viewer = await requireBrandViewer();
   const tokens = listAccessTokens(viewer);
   const reviewers = listReviewers(viewer);
+  const parts = listParts(viewer).map((p) => ({
+    id: p.part.id,
+    name: p.part.name,
+    packageComplete: p.part.package_state === 'complete',
+  }));
 
   const active = tokens.filter((t) => !t.revoked && (!t.expires_at || t.expires_at > new Date().toISOString()));
 
@@ -29,11 +35,7 @@ export default async function ReviewersPage() {
       <PageHeader
         title="Magic links & access"
         subtitle="Scoped, no-account access for external reviewers — NDA-gated, watermarked, time-boxed, revocable."
-        actions={
-          <Button size="sm">
-            <Plus className="size-4" /> New magic link
-          </Button>
-        }
+        actions={<InviteReviewerDialog parts={parts} triggerLabel="New magic link" />}
       />
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3">

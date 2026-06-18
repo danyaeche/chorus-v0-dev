@@ -5,6 +5,7 @@
  */
 
 import type {
+  ActivityType,
   BrandDecision,
   DfmState,
   ImplementationState,
@@ -16,6 +17,7 @@ import type {
   PackageState,
   PartProcess,
   PartState,
+  ProjectState,
   ProviderRole,
   SignoffState,
   SignoffTopic,
@@ -190,4 +192,31 @@ export const ndaStatusTone: Record<NdaStatus, Tone> = {
   not_required: 'neutral',
   pending: 'warning',
   signed: 'success',
+};
+
+export const projectStateLabels: Record<ProjectState, string> = {
+  setup: 'Setup',
+  dfm_active: 'DFM Active',
+  dfm_approved: 'DFM Approved',
+};
+
+export const projectStateTone: Record<ProjectState, Tone> = {
+  setup: 'neutral',
+  dfm_active: 'accent',
+  dfm_approved: 'success',
+};
+
+export const activityTypeMeta: Record<ActivityType, { label: string; tone: Tone }> = {
+  reviewer_invited: { label: 'Invited', tone: 'info' },
+  part_added: { label: 'Part added', tone: 'neutral' },
+  revision_uploaded: { label: 'Revision', tone: 'info' },
+  issue_opened: { label: 'Opened', tone: 'danger' },
+  decision_recorded: { label: 'Decision', tone: 'warning' },
+  validation_requested: { label: 'Validation', tone: 'warning' },
+  issue_closed: { label: 'Closed', tone: 'success' },
+  validation_failed: { label: 'Validation failed', tone: 'danger' },
+  signoff_recorded: { label: 'Sign-off', tone: 'accent' },
+  dfm_approved: { label: 'DFM approved', tone: 'success' },
+  package_completed: { label: 'Package', tone: 'success' },
+  comment_added: { label: 'Comment', tone: 'neutral' },
 };
