@@ -323,10 +323,20 @@ export function listActivity(
     .activityEvents.filter((e) => e.organization_id === viewer.organizationId)
     .filter((e) => (opts.projectId ? e.project_id === opts.projectId : true))
     .filter((e) => (opts.partId ? e.part_id === opts.partId : true))
-    // reviewers only see activity on parts they can access
+    // Reviewers only see activity on parts they can access AND never see events
+    // tied to another provider's DFM or issue (e.g. a competitor opening an
+    // issue on the same shared part). Brand users see everything in their org.
     .filter((e) => {
       if (isBrand(viewer)) return true;
-      return e.part_id ? viewer.allowedPartIds.includes(e.part_id) : false;
+      if (!e.part_id || !viewer.allowedPartIds.includes(e.part_id)) return false;
+      // Event bound to a specific DFM → must be the reviewer's own DFM.
+      if (e.dfm_id && !viewer.allowedDfmIds.includes(e.dfm_id)) return false;
+      // Event bound to an issue → that issue must live on the reviewer's DFM.
+      if (e.issue_id) {
+        const iss = store().issues.find((i) => i.id === e.issue_id);
+        if (!iss || !viewer.allowedDfmIds.includes(iss.dfm_id)) return false;
+      }
+      return true;
     })
     .sort((a, b) => b.created_at.localeCompare(a.created_at));
   return opts.limit ? events.slice(0, opts.limit) : events;

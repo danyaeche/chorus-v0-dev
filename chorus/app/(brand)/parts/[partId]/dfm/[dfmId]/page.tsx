@@ -51,8 +51,9 @@ export default async function DfmDetailPage({
       <div className="mb-4 flex items-start gap-2 rounded-md border border-violet-200 bg-violet-50 px-3 py-2 text-xs text-violet-800 dark:border-violet-900 dark:bg-violet-950 dark:text-violet-300">
         <Lock className="mt-0.5 size-3.5 shrink-0" />
         <span>
-          Confidential DFM. {dfm.reviewer.company} cannot see other providers&apos; DFMs, files, recommendations, or
-          issues — and they never see the cross-provider issue groups.
+          Confidential DFM. {dfm.reviewer.company}{' '}
+          cannot see other providers&apos; DFMs, files, recommendations, or issues — and they never
+          see the cross-provider issue groups.
         </span>
       </div>
 
