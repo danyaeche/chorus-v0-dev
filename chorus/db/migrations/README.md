@@ -20,9 +20,20 @@ With the Supabase CLI:
 
 ```bash
 supabase db reset            # local: re-applies everything in order
-# or push individual files
-psql "$SUPABASE_DB_URL" -f db/migrations/0001_enums.sql
 ```
+
+Against a hosted Supabase project, set `DIRECT_URL` to the session-mode pooler
+connection string (port `5432`) and apply the SQL files in lexical order:
+
+```bash
+for file in db/migrations/*.sql; do
+  psql "$DIRECT_URL" -v ON_ERROR_STOP=1 -f "$file"
+done
+```
+
+Use `DATABASE_URL` for transaction-mode pooler connections (port `6543`,
+`?pgbouncer=true`) if you add runtime SQL/ORM tooling later. Do not use the
+transaction pooler for migrations.
 
 Or paste each file into the Supabase SQL editor in order.
 
