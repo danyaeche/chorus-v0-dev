@@ -1,4 +1,4 @@
-import type { ChorusTurn } from "../types";
+import type { Answer, ChorusTurn, Voice } from "../types";
 import { VOICES_BY_ID } from "../voices";
 import { AnswerCard } from "./AnswerCard";
 import { SynthesisCard } from "./SynthesisCard";
@@ -13,19 +13,32 @@ interface Props {
 
 /** Renders one prompt, the grid of voice answers, and the synthesis row. */
 export function TurnView({ turn, index, onRegenerate, onSynthesize }: Props) {
-  const voices = turn.voiceIds
-    .map((id) => VOICES_BY_ID[id])
-    .filter((v): v is NonNullable<typeof v> => Boolean(v));
+  // Pair each voice with its answer once, dropping anything unresolved so the
+  // rest of the component works with a fully-typed, non-undefined list.
+  const cols = turn.voiceIds
+    .map((id) => ({ voice: VOICES_BY_ID[id], answer: turn.answers[id] }))
+    .filter((c): c is { voice: Voice; answer: Answer } =>
+      Boolean(c.voice && c.answer)
+    );
 
-  const stillWorking = voices.some((v) => {
-    const s = turn.answers[v.id]?.status;
-    return s === "idle" || s === "thinking" || s === "streaming";
-  });
-  const sources = voices.filter((v) => {
-    const a = turn.answers[v.id];
-    return a && a.text.trim() && a.status !== "error";
-  });
-  const canSynthesize = !stillWorking && sources.length > 0;
+  const stillWorking = cols.some(
+    ({ answer }) =>
+      answer.status === "idle" ||
+      answer.status === "thinking" ||
+      answer.status === "streaming"
+  );
+  const usable = cols.filter(
+    ({ answer }) => answer.text.trim() && answer.status !== "error"
+  );
+  const canSynthesize = !stillWorking && usable.length > 0;
+
+  // Label the synthesis from the snapshot it was built with, never the live
+  // answers — so the header can't disagree with the synthesized body.
+  const synthSourceNames = turn.synthesis
+    ? turn.synthesis.sourceVoiceIds
+        .map((id) => VOICES_BY_ID[id]?.name)
+        .filter((n): n is string => Boolean(n))
+    : [];
 
   return (
     <section className="space-y-3">
@@ -47,11 +60,11 @@ export function TurnView({ turn, index, onRegenerate, onSynthesize }: Props) {
         className="grid gap-3"
         style={{ gridTemplateColumns: `repeat(auto-fit, minmax(260px, 1fr))` }}
       >
-        {voices.map((voice) => (
+        {cols.map(({ voice, answer }) => (
           <AnswerCard
             key={voice.id}
             voice={voice}
-            answer={turn.answers[voice.id]}
+            answer={answer}
             onRegenerate={() => onRegenerate(turn.id, voice.id)}
           />
         ))}
@@ -60,7 +73,7 @@ export function TurnView({ turn, index, onRegenerate, onSynthesize }: Props) {
       {turn.synthesis ? (
         <SynthesisCard
           synthesis={turn.synthesis}
-          sourceNames={sources.map((v) => v.name)}
+          sourceNames={synthSourceNames}
           onRegenerate={() => onSynthesize(turn.id)}
         />
       ) : (

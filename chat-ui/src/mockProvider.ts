@@ -31,6 +31,11 @@ function hash(str: string): number {
 
 function sleep(ms: number, signal: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
+    // An already-aborted signal never re-fires "abort"; bail immediately.
+    if (signal.aborted) {
+      reject(new DOMException("Aborted", "AbortError"));
+      return;
+    }
     const onAbort = () => {
       clearTimeout(t);
       reject(new DOMException("Aborted", "AbortError"));
@@ -59,7 +64,7 @@ async function streamText(
 ): Promise<void> {
   const tokens = full.match(/\s*\S+/g) ?? [full];
   for (let i = 0; i < tokens.length; i++) {
-    onChunk({ delta: tokens[i], done: i === tokens.length - 1 });
+    onChunk({ delta: tokens[i]!, done: i === tokens.length - 1 });
     if (i < tokens.length - 1) await sleep(perTokenMs, signal);
   }
 }
@@ -72,7 +77,7 @@ const BODIES = [
 ];
 
 /** Build a plausible, voice-flavored answer from the threaded message history. */
-function composeAnswer(voice: Voice, messages: ChatMessage[]): string {
+export function composeAnswer(voice: Voice, messages: ChatMessage[]): string {
   const userMsgs = messages.filter((m) => m.role === "user");
   const prompt = userMsgs[userMsgs.length - 1]?.content ?? "";
   const topic = topicOf(prompt);
@@ -80,7 +85,7 @@ function composeAnswer(voice: Voice, messages: ChatMessage[]): string {
   const isFollowUp = priorAnswers.length > 0;
 
   const seed = hash(voice.id + "|" + messages.map((m) => m.content).join("|"));
-  const pick = <T>(arr: T[]): T => arr[seed % arr.length];
+  const pick = <T>(arr: T[]): T => arr[seed % arr.length]!;
 
   const firstOpeners: Record<string, string> = {
     opus: `Let's think this through carefully. On "${topic}", the key tension is between depth and practicality.`,
@@ -106,7 +111,7 @@ function composeAnswer(voice: Voice, messages: ChatMessage[]): string {
       `Building on what I said before, the same principle carries over: ${pick(
         BODIES
       ).toLowerCase()}`,
-      `What changes here is mostly emphasis — ${BODIES[(seed >> 3) % BODIES.length].toLowerCase()}`,
+      `What changes here is mostly emphasis — ${BODIES[(seed >> 3) % BODIES.length]!.toLowerCase()}`,
       closers[voice.id] ?? closers.gpt,
     ].join("\n\n");
   }
@@ -120,7 +125,7 @@ function composeAnswer(voice: Voice, messages: ChatMessage[]): string {
 }
 
 /** Merge every voice's answer into a single best-of response. */
-function composeSynthesis(input: SynthesisInput): string {
+export function composeSynthesis(input: SynthesisInput): string {
   const { prompt, answers } = input;
   const topic = topicOf(prompt);
   const names = answers.map((a) => a.voice.name);
@@ -148,6 +153,7 @@ function composeSynthesis(input: SynthesisInput): string {
 
 export const mockProvider: ChorusProvider = {
   async ask(voice, messages, onChunk, signal) {
+    if (signal.aborted) throw new DOMException("Aborted", "AbortError");
     const seed = hash(voice.id + messages.map((m) => m.content).join("|"));
     // Each voice "thinks" for a slightly different beat before answering.
     await sleep(350 + (seed % 900), signal);
@@ -160,6 +166,7 @@ export const mockProvider: ChorusProvider = {
   },
 
   async synthesize(input, onChunk, signal) {
+    if (signal.aborted) throw new DOMException("Aborted", "AbortError");
     const seed = hash(
       "synth|" + input.prompt + input.answers.map((a) => a.voice.id).join(",")
     );

@@ -12,7 +12,7 @@ interface Props {
 export function VoicePicker({ voices, selected, onToggle, disabled }: Props) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="text-xs font-medium uppercase tracking-wide text-ink-600/90 text-neutral-500">
+      <span className="text-xs font-medium uppercase tracking-wide text-neutral-500">
         Voices
       </span>
       {voices.map((voice) => {

@@ -1,11 +1,11 @@
 import { useState } from "react";
-import type { Answer } from "../types";
+import type { Synthesis } from "../types";
 import { CONDUCTOR } from "../voices";
 import { VoiceAvatar } from "./VoiceAvatar";
 
 interface Props {
-  synthesis: Answer;
-  /** Names of the voices this synthesis was distilled from. */
+  synthesis: Synthesis;
+  /** Names of the voices this synthesis was distilled from (snapshot). */
   sourceNames: string[];
   onRegenerate: () => void;
 }
@@ -41,17 +41,27 @@ export function SynthesisCard({ synthesis, sourceNames, onRegenerate }: Props) {
             </div>
           </div>
         </div>
-        <span className="text-[11px] text-violet-300/80">
-          {synthesis.status === "thinking"
-            ? "reading every answer…"
-            : synthesis.status === "streaming"
-              ? "writing…"
-              : synthesis.status === "error"
-                ? "error"
-                : synthesis.latencyMs != null
-                  ? `${(synthesis.latencyMs / 1000).toFixed(1)}s`
-                  : ""}
-        </span>
+        <div className="flex items-center gap-2">
+          {synthesis.stale && !working && (
+            <span
+              className="rounded-full border border-amber-400/40 bg-amber-400/10 px-2 py-0.5 text-[10px] font-medium text-amber-300"
+              title="A source answer changed after this was synthesized."
+            >
+              sources changed
+            </span>
+          )}
+          <span className="text-[11px] text-violet-300/80">
+            {synthesis.status === "thinking"
+              ? "reading every answer…"
+              : synthesis.status === "streaming"
+                ? "writing…"
+                : synthesis.status === "error"
+                  ? "error"
+                  : synthesis.latencyMs != null
+                    ? `${(synthesis.latencyMs / 1000).toFixed(1)}s`
+                    : ""}
+          </span>
+        </div>
       </header>
 
       <div className="px-4 py-3.5 text-[14px] leading-relaxed text-neutral-100">
@@ -82,7 +92,12 @@ export function SynthesisCard({ synthesis, sourceNames, onRegenerate }: Props) {
           type="button"
           onClick={onRegenerate}
           disabled={working}
-          className="rounded-md px-2 py-1 text-[11px] text-violet-200/80 transition hover:bg-violet-500/15 hover:text-violet-100 disabled:opacity-40"
+          className={[
+            "rounded-md px-2 py-1 text-[11px] transition disabled:opacity-40",
+            synthesis.stale
+              ? "bg-amber-400/15 text-amber-200 hover:bg-amber-400/25"
+              : "text-violet-200/80 hover:bg-violet-500/15 hover:text-violet-100",
+          ].join(" ")}
         >
           Re-synthesize
         </button>
