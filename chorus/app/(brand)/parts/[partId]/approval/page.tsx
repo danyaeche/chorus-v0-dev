@@ -1,5 +1,5 @@
-import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { Link } from '@/lib/router';
+import { notFound } from '@/lib/router';
 import { ShieldCheck } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
 import { ApproveDfmForm } from '@/components/approve-dfm-form';
@@ -11,11 +11,10 @@ import { dfmApprovalReadiness } from '@/lib/workflow';
 import { canApproveDfm } from '@/lib/permissions';
 import { formatDate, rev } from '@/utils/format';
 
-export const dynamic = 'force-dynamic';
 
-export default async function ApprovalPage({ params }: { params: Promise<{ partId: string }> }) {
-  const { partId } = await params;
-  const viewer = await requireBrandViewer();
+export default function ApprovalPage({ params }: { params: { partId: string } }) {
+  const { partId } = params;
+  const viewer = requireBrandViewer();
   const detail = getPartDetail(viewer, partId);
   if (!detail) notFound();
 

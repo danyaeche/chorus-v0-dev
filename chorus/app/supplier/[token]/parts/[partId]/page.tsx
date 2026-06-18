@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { Link } from '@/lib/router';
 import { AlertTriangle, ArrowLeft, Box, FileText, Lock } from 'lucide-react';
 import { StatusBadge, ToneDot } from '@/components/status-badge';
 import { CreateIssueForm } from '@/components/supplier/create-issue-form';
@@ -14,14 +14,13 @@ import {
 } from '@/types/labels';
 import { rev } from '@/utils/format';
 
-export const dynamic = 'force-dynamic';
 
-export default async function SupplierPartPage({
+export default function SupplierPartPage({
   params,
 }: {
-  params: Promise<{ token: string; partId: string }>;
+  params: { token: string; partId: string };
 }) {
-  const { token, partId } = await params;
+  const { token, partId } = params;
   const viewer = resolveReviewerToken(token, new Date().toISOString());
   if (!viewer) return <Invalid />;
 

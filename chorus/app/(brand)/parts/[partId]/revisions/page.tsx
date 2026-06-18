@@ -1,5 +1,5 @@
-import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { Link } from '@/lib/router';
+import { notFound } from '@/lib/router';
 import { PageHeader } from '@/components/page-header';
 import { StatusBadge } from '@/components/status-badge';
 import { UploadRevisionDialog } from '@/components/upload-revision-dialog';
@@ -8,11 +8,10 @@ import { requireBrandViewer } from '@/lib/auth/session';
 import { getPartDetail, getProfile } from '@/lib/db';
 import { formatCurrency, formatDate, rev } from '@/utils/format';
 
-export const dynamic = 'force-dynamic';
 
-export default async function RevisionsPage({ params }: { params: Promise<{ partId: string }> }) {
-  const { partId } = await params;
-  const viewer = await requireBrandViewer();
+export default function RevisionsPage({ params }: { params: { partId: string } }) {
+  const { partId } = params;
+  const viewer = requireBrandViewer();
   const detail = getPartDetail(viewer, partId);
   if (!detail) notFound();
 

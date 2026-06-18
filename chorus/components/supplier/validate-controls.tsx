@@ -1,11 +1,9 @@
-'use client';
-
 import { useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/lib/router';
 import { Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { validateIssueAction } from '@/app/supplier/actions';
+import { validateIssueAction } from '@/lib/supplier-actions';
 
 /**
  * Validation controls for the reviewer who raised the issue. Compares the

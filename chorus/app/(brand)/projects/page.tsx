@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { Link } from '@/lib/router';
 import { Plus } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
 import { StatCard } from '@/components/stat-card';
@@ -17,8 +17,8 @@ import { requireBrandViewer } from '@/lib/auth/session';
 import { listProjectSummaries } from '@/lib/db';
 import { rev } from '@/utils/format';
 
-export default async function ProjectsPage() {
-  const viewer = await requireBrandViewer();
+export default function ProjectsPage() {
+  const viewer = requireBrandViewer();
   const projects = listProjectSummaries(viewer);
 
   const totalParts = projects.reduce((n, p) => n + p.part_count, 0);

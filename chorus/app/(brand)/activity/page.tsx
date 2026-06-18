@@ -6,8 +6,8 @@ import { listActivity } from '@/lib/db';
 import { activityTypeMeta } from '@/types/labels';
 import { formatDate, timeAgo } from '@/utils/format';
 
-export default async function ActivityPage() {
-  const viewer = await requireBrandViewer();
+export default function ActivityPage() {
+  const viewer = requireBrandViewer();
   const events = listActivity(viewer);
 
   // Group by day for a readable feed.

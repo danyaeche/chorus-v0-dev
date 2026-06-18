@@ -1,6 +1,3 @@
-'use server';
-
-import { revalidatePath } from 'next/cache';
 import { requireBrandViewer } from '@/lib/auth/session';
 import {
   addComment,
@@ -42,8 +39,6 @@ export async function createProjectAction(input: unknown): Promise<ActionResult>
     target_completion: parsed.data.target_completion || null,
   });
   if (!id) return { ok: false, error: 'Not authorized' };
-  revalidatePath('/projects');
-  revalidatePath('/dashboard');
   return { ok: true, id };
 }
 
@@ -54,8 +49,6 @@ export async function createPartAction(input: unknown): Promise<ActionResult> {
 
   const id = createPart(viewer, parsed.data);
   if (!id) return { ok: false, error: 'Not authorized' };
-  revalidatePath('/parts');
-  revalidatePath(`/projects/${parsed.data.project_id}`);
   return { ok: true, id };
 }
 
@@ -63,7 +56,6 @@ export async function togglePackageItemAction(itemId: string, complete: boolean)
   const viewer = await requireBrandViewer();
   const ok = setPackageItemComplete(viewer, itemId, complete);
   if (!ok) return { ok: false, error: 'Could not update package item' };
-  revalidatePath('/parts', 'layout');
   return { ok: true };
 }
 
@@ -74,9 +66,6 @@ export async function dispositionIssueAction(input: unknown): Promise<ActionResu
 
   const ok = dispositionIssue(viewer, parsed.data.issue_id, parsed.data.decision, parsed.data.rationale || undefined);
   if (!ok) return { ok: false, error: 'Could not record disposition' };
-  revalidatePath(`/issues/${parsed.data.issue_id}`);
-  revalidatePath('/issues');
-  revalidatePath('/dashboard');
   return { ok: true };
 }
 
@@ -99,9 +88,6 @@ export async function inviteReviewerAction(input: unknown): Promise<InviteResult
   if (!result) {
     return { ok: false, error: 'Could not invite — the package must be Complete and you must be an admin/owner.' };
   }
-  revalidatePath(`/parts/${parsed.data.part_id}`);
-  revalidatePath('/reviewers');
-  revalidatePath('/dashboard', 'layout');
   return { ok: true, magic_link_path: result.magic_link_path, raw_token: result.raw_token };
 }
 
@@ -116,7 +102,6 @@ export async function uploadRevisionAction(input: unknown): Promise<ActionResult
     set_current: parsed.data.set_current,
   });
   if (!id) return { ok: false, error: 'Could not upload revision' };
-  revalidatePath(`/parts/${parsed.data.part_id}`, 'layout');
   return { ok: true, id };
 }
 
@@ -130,9 +115,6 @@ export async function setImplementationAction(input: unknown): Promise<ActionRes
     revision_id: parsed.data.revision_id || undefined,
   });
   if (!ok) return { ok: false, error: 'Could not update implementation' };
-  revalidatePath(`/issues/${parsed.data.issue_id}`);
-  revalidatePath('/issues');
-  revalidatePath('/dashboard');
   return { ok: true };
 }
 
@@ -143,7 +125,6 @@ export async function advanceSignoffAction(input: unknown): Promise<ActionResult
 
   const ok = advanceSignoff(viewer, parsed.data.signoff_id, parsed.data.state, parsed.data.rationale || undefined);
   if (!ok) return { ok: false, error: 'Could not update sign-off' };
-  revalidatePath('/parts', 'layout');
   return { ok: true };
 }
 
@@ -159,9 +140,6 @@ export async function approveDfmAction(input: unknown): Promise<ActionResult> {
     notes: parsed.data.notes || undefined,
   });
   if (!ok) return { ok: false, error: 'Approval gate not met, or you are not authorized.' };
-  revalidatePath(`/parts/${parsed.data.part_id}`, 'layout');
-  revalidatePath('/dashboard');
-  revalidatePath('/projects', 'layout');
   return { ok: true };
 }
 
@@ -172,6 +150,5 @@ export async function addBrandCommentAction(input: unknown): Promise<ActionResul
 
   const id = addComment(viewer, { issue_id: parsed.data.issue_id, body: parsed.data.body });
   if (!id) return { ok: false, error: 'Could not add comment' };
-  revalidatePath(`/issues/${parsed.data.issue_id}`);
   return { ok: true, id };
 }

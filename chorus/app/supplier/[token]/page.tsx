@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { Link } from '@/lib/router';
 import { AlertTriangle, ArrowRight, Check, Download, Eye, Lock, ShieldCheck, X } from 'lucide-react';
 import { StatusBadge } from '@/components/status-badge';
 import { PortalBeacon } from '@/components/supplier/portal-beacon';
@@ -9,7 +9,6 @@ import { dfmStateLabels, dfmStateTone, ndaStatusLabels } from '@/types/labels';
 import { formatDate, rev, timeAgo } from '@/utils/format';
 import type { AccessPermission, AuditAction } from '@/types/enums';
 
-export const dynamic = 'force-dynamic';
 
 const PERMISSION_LABEL: Record<AccessPermission, string> = {
   view_files: 'View files',
@@ -31,8 +30,8 @@ const AUDIT_LABEL: Record<AuditAction, string> = {
   access_granted: 'Access granted',
 };
 
-export default async function SupplierPortalPage({ params }: { params: Promise<{ token: string }> }) {
-  const { token } = await params;
+export default function SupplierPortalPage({ params }: { params: { token: string } }) {
+  const { token } = params;
   const viewer = resolveReviewerToken(token, new Date().toISOString());
 
   if (!viewer) {

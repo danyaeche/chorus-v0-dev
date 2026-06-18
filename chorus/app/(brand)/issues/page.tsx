@@ -3,13 +3,13 @@ import { IssueTable, type IssueRow } from '@/components/issue-table';
 import { requireBrandViewer } from '@/lib/auth/session';
 import { getPart, getProject, listIssues } from '@/lib/db';
 
-export default async function IssuesPage({
+export default function IssuesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ part?: string; project?: string }>;
+  searchParams: { part?: string; project?: string };
 }) {
-  const { part, project } = await searchParams;
-  const viewer = await requireBrandViewer();
+  const { part, project } = searchParams;
+  const viewer = requireBrandViewer();
   const issues = listIssues(viewer, { partId: part, projectId: project });
 
   const rows: IssueRow[] = issues.map((i) => {

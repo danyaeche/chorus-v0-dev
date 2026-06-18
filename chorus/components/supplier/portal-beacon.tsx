@@ -1,8 +1,6 @@
-'use client';
-
 import { useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { markPortalOpenedAction } from '@/app/supplier/actions';
+import { useRouter } from '@/lib/router';
+import { markPortalOpenedAction } from '@/lib/supplier-actions';
 
 /**
  * Fires once when the supplier opens their magic link: stamps last-opened, moves

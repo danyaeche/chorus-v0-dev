@@ -1,5 +1,5 @@
 /**
- * Repository layer — the only module pages and server actions import to read or
+ * Repository layer — the only module pages and mutation helpers import to read or
  * write Chorus data. Every function takes a `Viewer` and applies the permission
  * helpers so confidentiality is enforced centrally, regardless of backend.
  *

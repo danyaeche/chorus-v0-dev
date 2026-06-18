@@ -1,5 +1,5 @@
-import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { Link } from '@/lib/router';
+import { notFound } from '@/lib/router';
 import { AlertTriangle } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
 import { StatusBadge } from '@/components/status-badge';
@@ -8,9 +8,9 @@ import { requireBrandViewer } from '@/lib/auth/session';
 import { getPart, listIssueGroups } from '@/lib/db';
 import { issueStatusLabels, issueStatusTone } from '@/types/labels';
 
-export default async function IssueGroupsPage({ params }: { params: Promise<{ partId: string }> }) {
-  const { partId } = await params;
-  const viewer = await requireBrandViewer();
+export default function IssueGroupsPage({ params }: { params: { partId: string } }) {
+  const { partId } = params;
+  const viewer = requireBrandViewer();
   const part = getPart(viewer, partId);
   if (!part) notFound();
   const groups = listIssueGroups(viewer, { partId });

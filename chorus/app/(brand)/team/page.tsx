@@ -14,8 +14,8 @@ import { listMemberships, listReviewers } from '@/lib/db';
 import { ndaStatusLabels, ndaStatusTone, providerRoleLabels } from '@/types/labels';
 import { initials } from '@/utils/format';
 
-export default async function TeamPage() {
-  const viewer = await requireBrandViewer();
+export default function TeamPage() {
+  const viewer = requireBrandViewer();
   const members = listMemberships(viewer);
   const reviewers = listReviewers(viewer);
 

@@ -1,5 +1,5 @@
-import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { Link } from '@/lib/router';
+import { notFound } from '@/lib/router';
 import { PageHeader } from '@/components/page-header';
 import { DispositionForm } from '@/components/disposition-form';
 import { ImplementationControl } from '@/components/implementation-control';
@@ -27,9 +27,9 @@ import { formatCurrency, rev, timeAgo } from '@/utils/format';
 
 const STEPPER = ISSUE_STATUSES; // open → dispositioned → implemented → validated → closed
 
-export default async function IssueDetailPage({ params }: { params: Promise<{ issueId: string }> }) {
-  const { issueId } = await params;
-  const viewer = await requireBrandViewer();
+export default function IssueDetailPage({ params }: { params: { issueId: string } }) {
+  const { issueId } = params;
+  const viewer = requireBrandViewer();
   const issue = getIssue(viewer, issueId);
   if (!issue) notFound();
 

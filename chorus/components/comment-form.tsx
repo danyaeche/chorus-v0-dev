@@ -1,12 +1,10 @@
-'use client';
-
 import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/lib/router';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { addBrandCommentAction } from '@/app/actions';
-import { addReviewerCommentAction } from '@/app/supplier/actions';
+import { addBrandCommentAction } from '@/lib/actions';
+import { addReviewerCommentAction } from '@/lib/supplier-actions';
 
 /**
  * Shared comment box. When `token` is provided it posts through the scoped

@@ -1,12 +1,10 @@
-'use client';
-
 import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/lib/router';
 import { Check, Circle, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
 import { StatusBadge } from '@/components/status-badge';
-import { togglePackageItemAction } from '@/app/actions';
+import { togglePackageItemAction } from '@/lib/actions';
 import type { PackageItem } from '@/types';
 
 /**

@@ -4,8 +4,7 @@
 Design-for-Manufacturability workspace where a brand coordinates manufacturing
 feedback with the external reviewers/manufacturers it sources from.
 
-This is a single full-stack **Next.js (App Router)** application — one app, server
-actions + API routes, no separate backend.
+This is a Vite + React single-page application using TanStack Router for routing and TanStack React Query for client-side data refresh/invalidation. It runs with an in-memory demo repository by default.
 
 ## The model
 
@@ -39,23 +38,16 @@ Workspace/Org
 
 ## Stack
 
-Next.js App Router · TypeScript · Tailwind CSS · shadcn/ui · Lucide · TanStack
-Table · React Hook Form · Zod · Supabase (Postgres / Auth / Storage). Render-ready.
+Vite · React · TanStack Router · TanStack React Query · TypeScript · Tailwind CSS · shadcn/ui · Lucide · TanStack Table · React Hook Form · Zod · Supabase-ready domain layer.
 
 ## Repo layout
 
 ```
-app/
-  (brand)/            authenticated brand workspace (shared sidebar shell)
-    dashboard/        workspace-wide DFM rollup
-    projects/         list · [projectId] detail · new
-    parts/            list · new · [partId] hub
-      [partId]/       package gate · revisions · dfm/[dfmId] · signoffs · issue-groups · approval
-    issues/           inbox (TanStack Table) · [issueId] detail + disposition
-    activity/  team/  reviewers/  settings/
-  supplier/[token]/   external reviewer portal (scoped magic link, no account)
-  login/  signup/     auth
-  actions.ts          server actions (create project/part, package toggle, disposition)
+src/main.tsx         TanStack Router route tree + React Query provider
+app/                 route page components consumed by the SPA
+  (brand)/           brand workspace screens
+  supplier/[token]/  external reviewer portal screens
+lib/actions.ts       mutation helpers (create project/part, package toggle, disposition)
 components/           UI: sidebar, tables, status badges, forms, package panel
 lib/
   supabase/           browser / server / service-role / proxy clients
@@ -64,11 +56,10 @@ lib/
   storage/            private-bucket signed URLs
   workflow/           issue state machine · package gate · approval gate · validation
   db/                 repository layer (+ in-memory demo store seeded with TM-4)
-  validation.ts       Zod schemas shared by RHF + server actions
+  validation.ts       Zod schemas shared by RHF + mutation helpers
 db/migrations/        SQL: enums · tables · triggers · RLS · seed · storage bucket
 types/                domain enums, models, view aggregates, labels
 utils/                formatting helpers
-proxy.ts              session refresh (Next 16 "proxy", formerly middleware)
 ```
 
 ## Running

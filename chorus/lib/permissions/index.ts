@@ -12,7 +12,7 @@
  *  - Issue Groups are brand-side only; reviewers can never read them.
  *
  * These are pure predicates over a Viewer + a resource shape. They contain no
- * I/O; the data layer calls them to filter rows, and server actions call them
+ * I/O; the data layer calls them to filter rows, and mutation helpers call them
  * to authorize mutations.
  */
 import type {

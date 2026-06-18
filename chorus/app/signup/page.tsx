@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { Link } from '@/lib/router';
 import { Workflow } from 'lucide-react';
 import { buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

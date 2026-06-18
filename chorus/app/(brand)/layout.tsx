@@ -1,15 +1,13 @@
-import { redirect } from 'next/navigation';
+import { redirect } from '@/lib/router';
 import { AppSidebar } from '@/components/app-sidebar';
 import { getBrandViewer } from '@/lib/auth/session';
 import { getOrganization } from '@/lib/db';
 import { isSupabaseConfigured } from '@/lib/env';
 import { initials } from '@/utils/format';
 
-// The demo store is mutated by server actions; render brand routes per-request.
-export const dynamic = 'force-dynamic';
 
-export default async function BrandLayout({ children }: { children: React.ReactNode }) {
-  const viewer = await getBrandViewer();
+export default function BrandLayout({ children }: { children: React.ReactNode }) {
+  const viewer = getBrandViewer();
   if (!viewer) {
     // Only happens in connected mode without a session.
     redirect('/login');

@@ -1,6 +1,3 @@
-'use server';
-
-import { revalidatePath } from 'next/cache';
 import {
   addComment,
   createIssueByReviewer,
@@ -46,7 +43,6 @@ export async function createIssueAction(token: string, input: unknown): Promise<
     yield_impact: parsed.data.yield_impact || undefined,
   });
   if (!id) return { ok: false, error: 'You do not have permission to raise an issue.' };
-  revalidatePath(`/supplier/${token}`, 'layout');
   return { ok: true, id };
 }
 
@@ -58,7 +54,6 @@ export async function addReviewerCommentAction(token: string, input: unknown): P
 
   const id = addComment(viewer, { issue_id: parsed.data.issue_id, body: parsed.data.body });
   if (!id) return { ok: false, error: 'You do not have permission to comment.' };
-  revalidatePath(`/supplier/${token}`, 'layout');
   return { ok: true, id };
 }
 
@@ -70,6 +65,5 @@ export async function validateIssueAction(token: string, input: unknown): Promis
 
   const ok = validateIssue(viewer, parsed.data.issue_id, parsed.data.result);
   if (!ok) return { ok: false, error: 'Only the reviewer who raised this issue can validate its implemented fix.' };
-  revalidatePath(`/supplier/${token}`, 'layout');
   return { ok: true };
 }
