@@ -4,9 +4,11 @@
  * page renders, so server components don't have to stitch relations together.
  */
 
+import type { AccessPermission } from './enums';
 import type {
   AccessToken,
   ActivityEvent,
+  AuditEvent,
   Comment,
   Dfm,
   DfmApproval,
@@ -108,4 +110,20 @@ export interface ReviewerPortalView {
     open_issue_count: number;
   }[];
   activity: ActivityEvent[];
+  audit: AuditEvent[];
+}
+
+/** What an external reviewer sees for one assigned part — their DFM only. */
+export interface ReviewerPartView {
+  part: Part;
+  project: Project;
+  reviewer: ExternalReviewer;
+  dfm: DfmView;
+  current_revision?: PartRevision | null;
+  revisions: PartRevision[];
+  files: FileObject[];
+  issues: IssueView[];
+  permissions: AccessPermission[];
+  nda_cleared: boolean;
+  download_blocked: boolean;
 }

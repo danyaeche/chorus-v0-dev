@@ -3,23 +3,8 @@ import { StatusBadge } from '@/components/status-badge';
 import { Card } from '@/components/ui/card';
 import { requireBrandViewer } from '@/lib/auth/session';
 import { listActivity } from '@/lib/db';
-import type { ActivityType } from '@/types/enums';
-import type { Tone } from '@/types/labels';
+import { activityTypeMeta } from '@/types/labels';
 import { formatDate, timeAgo } from '@/utils/format';
-
-const TYPE_LABEL: Record<ActivityType, { label: string; tone: Tone }> = {
-  reviewer_invited: { label: 'Invited', tone: 'info' },
-  part_added: { label: 'Part added', tone: 'neutral' },
-  revision_uploaded: { label: 'Revision', tone: 'info' },
-  issue_opened: { label: 'Opened', tone: 'danger' },
-  decision_recorded: { label: 'Decision', tone: 'warning' },
-  validation_requested: { label: 'Validation', tone: 'warning' },
-  issue_closed: { label: 'Closed', tone: 'success' },
-  signoff_recorded: { label: 'Sign-off', tone: 'accent' },
-  dfm_approved: { label: 'DFM approved', tone: 'success' },
-  package_completed: { label: 'Package', tone: 'success' },
-  comment_added: { label: 'Comment', tone: 'neutral' },
-};
 
 export default async function ActivityPage() {
   const viewer = await requireBrandViewer();
@@ -44,7 +29,7 @@ export default async function ActivityPage() {
             <ul className="space-y-2.5">
               {items.map((e) => (
                 <li key={e.id} className="flex items-center gap-3 text-sm">
-                  <StatusBadge label={TYPE_LABEL[e.type].label} tone={TYPE_LABEL[e.type].tone} />
+                  <StatusBadge label={activityTypeMeta[e.type].label} tone={activityTypeMeta[e.type].tone} />
                   <span className="flex-1">{e.summary}</span>
                   <span className="shrink-0 text-xs text-muted-foreground">{timeAgo(e.created_at)}</span>
                 </li>

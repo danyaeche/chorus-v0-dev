@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { Check, Circle, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
@@ -13,6 +14,7 @@ import type { PackageItem } from '@/types';
  * is checked — the panel shows live progress and the gate banner.
  */
 export function PackagePanel({ items: initial }: { items: PackageItem[] }) {
+  const router = useRouter();
   const [items, setItems] = useState(initial);
   const [isPending, startTransition] = useTransition();
 
@@ -22,12 +24,20 @@ export function PackagePanel({ items: initial }: { items: PackageItem[] }) {
 
   function toggle(item: PackageItem) {
     const next = !item.complete;
+    const willComplete = required.length > 0 && required.every((i) => (i.id === item.id ? next : i.complete));
     setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, complete: next } : i)));
     startTransition(async () => {
       const res = await togglePackageItemAction(item.id, next);
       if (!res.ok) {
         toast.error(res.error);
         setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, complete: !next } : i)));
+        return;
+      }
+      // The gate just crossed Complete/Incomplete → refresh so the (server-rendered)
+      // invite button and part state pick up the change.
+      if (willComplete !== complete) {
+        if (willComplete) toast.success('Package complete — reviewers can be invited');
+        router.refresh();
       }
     });
   }

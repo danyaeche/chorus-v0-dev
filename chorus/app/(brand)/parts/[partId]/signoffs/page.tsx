@@ -2,10 +2,13 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { PageHeader } from '@/components/page-header';
 import { StatusBadge } from '@/components/status-badge';
+import { SignoffControls } from '@/components/signoff-controls';
 import { Card } from '@/components/ui/card';
 import { requireBrandViewer } from '@/lib/auth/session';
 import { getPart, getReviewer, getProfile, listSignoffs } from '@/lib/db';
 import { signoffStateLabels, signoffStateTone, signoffTopicLabels } from '@/types/labels';
+
+export const dynamic = 'force-dynamic';
 
 const FLOW = ['proposed', 'aligned', 'signed'] as const;
 
@@ -77,6 +80,11 @@ export default async function SignoffsPage({ params }: { params: Promise<{ partI
                   </span>
                 );
               })}
+            </div>
+
+            {/* Advance controls */}
+            <div className="mt-4 border-t pt-3">
+              <SignoffControls signoffId={s.id} state={s.state} rationale={s.rationale} />
             </div>
           </Card>
         ))}

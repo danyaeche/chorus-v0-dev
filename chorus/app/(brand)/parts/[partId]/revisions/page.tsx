@@ -1,19 +1,23 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Upload } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
 import { StatusBadge } from '@/components/status-badge';
-import { Button } from '@/components/ui/button';
+import { UploadRevisionDialog } from '@/components/upload-revision-dialog';
 import { Card } from '@/components/ui/card';
 import { requireBrandViewer } from '@/lib/auth/session';
 import { getPartDetail, getProfile } from '@/lib/db';
 import { formatCurrency, formatDate, rev } from '@/utils/format';
+
+export const dynamic = 'force-dynamic';
 
 export default async function RevisionsPage({ params }: { params: Promise<{ partId: string }> }) {
   const { partId } = await params;
   const viewer = await requireBrandViewer();
   const detail = getPartDetail(viewer, partId);
   if (!detail) notFound();
+
+  const nextRevIndex = detail.revisions.length ? Math.max(...detail.revisions.map((r) => r.rev_index)) + 1 : 0;
+  const nextRevLabel = String.fromCharCode(65 + Math.min(nextRevIndex, 25));
 
   return (
     <>
@@ -25,11 +29,7 @@ export default async function RevisionsPage({ params }: { params: Promise<{ part
         }
         title="Revision history"
         subtitle="Shared design — every provider reviews these. Each change is recorded against issues."
-        actions={
-          <Button size="sm" variant="outline">
-            <Upload className="size-4" /> Upload revision
-          </Button>
-        }
+        actions={<UploadRevisionDialog partId={partId} nextRevLabel={nextRevLabel} />}
       />
 
       <ol className="space-y-3">

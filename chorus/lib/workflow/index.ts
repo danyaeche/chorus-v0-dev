@@ -10,6 +10,7 @@ import type {
   PackageItem,
   Part,
   PartRevision,
+  ProjectState,
   Signoff,
   ValidationState,
 } from '@/types';
@@ -171,6 +172,23 @@ export function derivePartState(input: {
   if (!input.hasDfms) return 'package_complete';
   if (input.anyAwaitingValidation) return 'awaiting_validation';
   return 'dfm_active';
+}
+
+/**
+ * Derive the program-level state shown on the project hub from its parts.
+ *   - dfm_approved: every part is approved (and there is at least one part)
+ *   - dfm_active:   at least one part is in (or past) DFM review
+ *   - setup:        otherwise (parts still in draft / package prep)
+ */
+export function deriveProjectState(parts: Pick<Part, 'part_state'>[]): ProjectState {
+  if (parts.length === 0) return 'setup';
+  if (parts.every((p) => p.part_state === 'dfm_approved')) return 'dfm_approved';
+  const active = parts.some((p) =>
+    p.part_state === 'dfm_active' ||
+    p.part_state === 'awaiting_validation' ||
+    p.part_state === 'dfm_approved',
+  );
+  return active ? 'dfm_active' : 'setup';
 }
 
 // --- Allowed transitions (for UI affordances / validation) --------------------
