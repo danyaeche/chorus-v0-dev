@@ -44,9 +44,10 @@ Vite · React · TanStack Router · TanStack React Query · TypeScript · Tailwi
 
 ```
 src/main.tsx         TanStack Router route tree + React Query provider
-app/                 route page components consumed by the SPA
-  (brand)/           brand workspace screens
-  supplier/[token]/  external reviewer portal screens
+src/root.tsx         app shell providers
+src/routes/          route page components consumed by the SPA
+  brand/             brand workspace screens
+  supplier/$token/   external reviewer portal screens
 lib/actions.ts       mutation helpers (create project/part, package toggle, disposition)
 components/           UI: sidebar, tables, status badges, forms, package panel
 lib/
@@ -65,8 +66,8 @@ utils/                formatting helpers
 ## Running
 
 ```bash
-pnpm install
-pnpm dev          # http://localhost:3000
+npm install
+npm run dev      # http://localhost:5173
 ```
 
 ### Demo vs. connected mode
@@ -97,5 +98,5 @@ revision diffing, and watermarking are modeled as stubs / vNext hooks.
 
 ## Deploying on Render
 
-Create a **Web Service**, root directory `chorus`, build `pnpm install && pnpm build`,
-start `pnpm start`. Add the Supabase env vars from `.env.example`.
+Create a **Web Service**, root directory `chorus`, build `npm ci && npm run build`,
+start `npm run start`. Add the Supabase env vars from `.env.example`.
